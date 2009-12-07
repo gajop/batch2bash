@@ -28,6 +28,8 @@ errorlevel		{ return ERRORLEVEL; }
 exists				{ return EXISTS; }
 if						{ return IF; }
 for						{ return FOR; }
+in 						{return IN;		}
+do 						{return DO;}
 goto					{ return GOTO; }
 not						{ return NOT; }
 nul						{ return NUL; }
@@ -53,6 +55,9 @@ geq						{ yylval = GE; return RELOP; }
 "*"						{ yylval = MANY; return WILDCARD; /* hmm */}
 "?"						{ yylval = ONE; return WILDCARD; /* hmm */}
 "%"    	  		{ return PERCENT; }
+"("						{return LPAREN;				}	
+")"						{return RPAREN;				}	
+
 
 
 

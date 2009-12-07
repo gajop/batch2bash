@@ -29,6 +29,8 @@
 %token EXISTS
 %token IF
 %token FOR 
+%token IN
+%token DO
 %token GOTO
 %token NOT
 %token NUL
@@ -44,6 +46,9 @@
 %token NOECHO
 %token WILDCARD
 %token PERCENT
+%token LPAREN
+%token RPAREN
+
 
 
 
@@ -112,11 +117,15 @@ choice_command :
 							 ;
 
 for_command :
+	FOR PERCENT variable  IN LPAREN statement_list RPAREN DO command
 						;
 
 if_command : IF NOT if_body 
 					 | IF if_body
 					 ;
+					 
+statement_list:	
+								;
 
 if_body : ERRORLEVEL NUMBER ID
 				| ID STROP ID command 
