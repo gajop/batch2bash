@@ -1,20 +1,23 @@
 /* using tabs to get same spacing, this is going to look bad with other tab lengths */
+
 %{
+	#include <string.h>
+	#include "y.tab.h"
+    #include "defs.h"
 
-#include <string.h>
-#include "y.tab.h"
-
-int line = 1;
-extern YYSTYPE yylval;
+	
+	extern YYSTYPE yylval;
+	int line = 1;
+	
 
 %}
+
 
 letter				[_a-zA-Z]
 digit					[0-9]
 
 %%
 
-/* keywords */
 echo.*				{ yylval = (int)strdup(yytext + 4); return ECHO; }
 rem[\t ].*		{ yylval = (int)strdup(yytext + 3); return REM; }
 ":".+			    { yylval = (int)strdup(yytext + 1); return LABEL; }
@@ -53,7 +56,7 @@ geq						{ yylval = GE; return RELOP; }
 "%"    	  		{ return PERCENT; }
 
 
-/* ms-dos commands */
+
 assign				{ return ASSIGN; }
 attrib				{ return ATTRIB; }
 cd						{ return CD; }
@@ -81,15 +84,13 @@ time					{ return TIME; }
 type					{ return TYPE; }
 xcopy					{ return XCOPY; }
 
-/* other */
 {letter}({letter}|{digit})* { return ID; }
 ":"						{ return COLON; }
 "/"						{ return SLASH; }
 "\\"					{ return BACKSLASH; }
 [\t ]+				{ return WHITESPACE; }
 \n|\n\r				{ line++; return NEWLINE; }
-\"						{ /* do we need this? will check later :> */
-								int in_string = 1;
+\"					{			int in_string = 1;
 								char c;
 								while (in_string) {
 									c = input();
@@ -101,6 +102,7 @@ xcopy					{ return XCOPY; }
 										fprintf(stderr, "\nerror: string not closed");
 									}
 							}
+						}
 
 .							{ printf("\n LEXICAL ERROR on character %c in line %d", yytext[0], line); }
 
