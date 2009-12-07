@@ -107,8 +107,13 @@ command : echo_command
 				| goto_command
 				;
 
-echo_command :
-						 ;
+echo_command : ECHO "off"
+			 | ECHO "on"
+			 | ECHO string
+			 ;
+			 
+string :
+				;
 
 rem_command : REM
 						;
