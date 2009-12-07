@@ -1,5 +1,5 @@
 
-LEX_SRC = scaner.l
+LEX_SRC = scanner.l
 YACC_SRC = parser.y
 
 .PHONY: clean
