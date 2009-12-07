@@ -19,18 +19,21 @@ echo.*				{ yylval = (int)strdup(yytext + 4); return ECHO; }
 rem[\t ].*		{ yylval = (int)strdup(yytext + 3); return REM; }
 ":".+			    { yylval = (int)strdup(yytext + 1); return LABEL; }
 "/".					{ yylval = (int)strdup(yytext+1); return PARAMETER; } 
+call	 	   		{ return CALL; }
 choice				{ return CHOICE; }
+con						{ return CONSOLE; }
+errorlevel		{ return RETVALUE; }
+exists				{ return EXISTS; }
 if						{ return IF; }
 for						{ return FOR; }
 goto					{ return GOTO; }
-pause					{ return PAUSE; }
 not						{ return NOT; }
+nul						{ return NUL; }
+off						{ return OFF; /*is this really a keyword?*/}
+pause					{ return PAUSE; }
 set						{ return SET; }
 shift					{ return SHIFT; }
 sgn						{ return SIGN; }
-errorlevel		{ return RETVALUE; }
-con						{ return CONSOLE; }
-,							{ return COMMA; }
 equ						{ yylval = EQ; return RELOP; }
 neq						{ yylval = NE; return RELOP; }
 lss						{ yylval = LT; return RELOP; }
@@ -47,8 +50,7 @@ geq						{ yylval = GE; return RELOP; }
 "@"						{ return NOECHO; }
 "*"						{ yylval = MANY; return WILDCARD; /* hmm */}
 "?"						{ yylval = ONE; return WILDCARD; /* hmm */}
-"%"{letter}({letter}|{digit})*"%"			{ return VARIABLE; } */
-nul						{ return NUL; }
+"%"    	  		{ return PERCENT; }
 
 
 /* ms-dos commands */
@@ -80,6 +82,10 @@ type					{ return TYPE; }
 xcopy					{ return XCOPY; }
 
 /* other */
+{letter}({letter}|{digit})* { return ID; }
+":"						{ return COLON; }
+"/"						{ return SLASH; }
+"\\"					{ return BACKSLASH; }
 [\t ]+				{ return WHITESPACE; }
 \n|\n\r				{ line++; return NEWLINE; }
 \"						{ /* do we need this? will check later :> */
