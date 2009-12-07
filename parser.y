@@ -25,7 +25,7 @@
 %token CALL
 %token CHOICE
 %token CONSOLE 
-%token RETVALUE
+%token ERRORLEVEL
 %token EXISTS
 %token IF
 %token FOR 
@@ -79,6 +79,7 @@
 /* other tokens  */
 
 %token ID
+%token NUMBER
 %token COLON
 %token SLASH
 %token BACKSLASH
@@ -89,8 +90,52 @@
 
 %%
 
-file :
-	;
+command_list : 
+						 | command_list command
+						 ;
+
+command : echo_command
+				| rem_command
+				| choice_command
+				| if_command
+				| for_command
+				| goto_command
+				;
+
+echo_command :
+						 ;
+
+rem_command : REM
+						;
+
+choice_command :
+							 ;
+
+for_command :
+						;
+
+if_command : IF NOT if_body 
+					 | IF if_body
+					 ;
+
+if_body : ERRORLEVEL NUMBER ID
+				| ID STROP ID command 
+				| EXISTS filename command	
+				;
+
+goto_command : GOTO variable
+						 | GOTO ID
+						 ;
+
+label : COLON ID
+      ;
+
+variable : PERCENT ID PERCENT
+				 ;
+
+filename : ID COLON SLASH ID
+				 | ID /* yeah, riiight */
+				 ;
 
 %%
 
