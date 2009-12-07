@@ -105,6 +105,7 @@ command : echo_command
 				| if_command
 				| for_command
 				| goto_command
+				| cls_command
 				;
 
 echo_command :
@@ -135,6 +136,9 @@ if_body : ERRORLEVEL NUMBER ID
 goto_command : GOTO variable
 						 | GOTO ID
 						 ;
+
+cls_command : CLS
+						;
 
 label : COLON ID
       ;
