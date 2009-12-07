@@ -20,12 +20,11 @@ digit					[0-9]
 
 echo.*				{ yylval = (int)strdup(yytext + 4); return ECHO; }
 rem[\t ].*		{ yylval = (int)strdup(yytext + 3); return REM; }
-":".+			    { yylval = (int)strdup(yytext + 1); return LABEL; }
 "/".					{ yylval = (int)strdup(yytext+1); return PARAMETER; } 
 call	 	   		{ return CALL; }
 choice				{ return CHOICE; }
 con						{ return CONSOLE; }
-errorlevel		{ return RETVALUE; }
+errorlevel		{ return ERRORLEVEL; }
 exists				{ return EXISTS; }
 if						{ return IF; }
 for						{ return FOR; }
@@ -85,6 +84,7 @@ type					{ return TYPE; }
 xcopy					{ return XCOPY; }
 
 {letter}({letter}|{digit})* { return ID; }
+{digit}+			{ return NUMBER; }
 ":"						{ return COLON; }
 "/"						{ return SLASH; }
 "\\"					{ return BACKSLASH; }
