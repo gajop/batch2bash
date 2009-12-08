@@ -100,24 +100,24 @@ command_list :
 						 ;
 
 command : echo_command
-				| rem_command
-				| choice_command
-				| if_command
-				| for_command
-				| goto_command
-				| cls_command
-				;
+	| rem_command
+	| choice_command
+	| if_command
+	| for_command
+	| goto_command
+	| cls_command
+	;
 
 echo_command : ECHO "off"
-			 | ECHO "on"
-			 | ECHO string
-			 ;
+             | ECHO "on"
+             | ECHO string
+	     ;
 			 
 string :
-				;
+	;
 
 rem_command : REM
-						;
+        	;
 
 choice_command :
 							 ;
@@ -159,7 +159,7 @@ filename : ID COLON SLASH ID
 
 
     int yyerror(char *s) {
-        fprintf(stderr, "\nERROR (%d): %s", line, s);
+        fprintf(stderr, "\nERROR (%d): %s\n", line, s);
         return 0;
     }
 
