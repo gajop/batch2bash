@@ -120,7 +120,7 @@ rem_command : REM
         	;
 
 choice_command :
-	       ;
+							 ;
 
 for_command :
 	FOR PERCENT variable  IN LPAREN statement_list RPAREN DO command

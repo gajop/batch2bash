@@ -20,7 +20,7 @@ digit					[0-9]
 
 echo(" "|".").*				{ yylval = (int)strdup(yytext + 4); return ECHO; }
 rem[\t ].*		{ yylval = (int)strdup(yytext + 3); return REM; }
-"/".*					{ yylval = (int)strdup(yytext+1); return PARAMETER; } 
+"/".					{ yylval = (int)strdup(yytext+1); return PARAMETER; } 
 call	 	   		{ return CALL; }
 choice				{ return CHOICE; }
 con						{ return CONSOLE; }
