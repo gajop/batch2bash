@@ -17,9 +17,9 @@ digit               [0-9]
 
 %%
 
-echo[[:blank:]"."].*    { yylval = (int)strdup(yytext + 4); if (DEBUG) fprintf(stdout, "\nECHO\n"); return ECHO; }
-rem[\t ].*              { yylval = (int)strdup(yytext + 3); if (DEBUG) fprintf(stdout, "\nREM\n"); return REM; }
-"/".+                   { yylval = (int)strdup(yytext+1); if (DEBUG) fprintf(stdout, "\nPARAMETERS\n"); return PARAMETER; } 
+echo[[:blank:]"."].*    { yylval = (long)strdup(yytext + 4); if (DEBUG) fprintf(stdout, "\nECHO\n"); return ECHO; }
+rem[\t ].*              { yylval = (long)strdup(yytext + 3); if (DEBUG) fprintf(stdout, "\nREM\n"); return REM; }
+"/".+                   { yylval = (long)strdup(yytext+1); if (DEBUG) fprintf(stdout, "\nPARAMETERS\n"); return PARAMETER; } 
 call                    { if (DEBUG) fprintf(stdout, "\nCALL\n"); return CALL; }
 choice                  { if (DEBUG) fprintf(stdout, "\nCHOICE\n"); return CHOICE; }
 con                     { if (DEBUG) fprintf(stdout, "\nCONSOLE\n"); return CONSOLE; }
