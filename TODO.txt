@@ -2,7 +2,8 @@
 
 just gramar for now , moving onto next things later 
 
-
+Lex : when processing the NEWLINE token, calculate how many occurances of \n
+are in the string, yytext(?) and add that many lines
 
 
 echo - seems to be done , need to see how to capture the whole string , since echo doesn't eat up spaces 

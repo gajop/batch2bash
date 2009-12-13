@@ -97,8 +97,10 @@ extern int error;
 
 %%
 
-program : command_list
+program : NEWLINE command_list
         | command_list NEWLINE
+        | NEWLINE command_list NEWLINE
+        | command_list
         ;
 
 command_list : command
