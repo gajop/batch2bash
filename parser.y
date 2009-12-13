@@ -106,7 +106,7 @@ silent_command : NOECHO normal_command
                ;
 
 normal_command : compound_command
-							 | echo_command
+               | echo_command
                | rem_command
                | choice_command
                | if_command
@@ -114,11 +114,11 @@ normal_command : compound_command
                | goto_command
                | cls_command
                | label
-							 | del_command
+               | del_command
                ;
 
 compound_command : LPAREN command_list RPAREN
-								 ;
+                                 ;
 
 echo_command : ECHO
              ;
@@ -127,7 +127,7 @@ rem_command : REM
             ;
 
 del_command : DEL filename
-						;
+            ;
 
 choice_command : CHOICE
                ;
@@ -136,8 +136,8 @@ for_command : FOR PERCENT variable IN LPAREN command RPAREN DO command
             ;
 
 if_command : if_part ELSE command
-					 | if_part 
-					 ;
+           | if_part 
+           ;
 
 if_part : IF NOT if_body command
         | IF if_body command

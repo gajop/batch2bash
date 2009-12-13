@@ -23,7 +23,7 @@ rem[\t ].*              { yylval = (int)strdup(yytext + 3); if (DEBUG) fprintf(s
 call                    { if (DEBUG) fprintf(stdout, "\nCALL\n"); return CALL; }
 choice                  { if (DEBUG) fprintf(stdout, "\nCHOICE\n"); return CHOICE; }
 con                     { if (DEBUG) fprintf(stdout, "\nCONSOLE\n"); return CONSOLE; }
-else										{ if (DEBUG) fprintf(stdout, "\nELSE\n"); return ELSE; }
+else                    { if (DEBUG) fprintf(stdout, "\nELSE\n"); return ELSE; }
 errorlevel              { if (DEBUG) fprintf(stdout, "\nERRORLEVEL\n"); return ERRORLEVEL; }
 exist                   { if (DEBUG) fprintf(stdout, "\nEXIST\n"); return EXIST; }
 if                      { if (DEBUG) fprintf(stdout, "\nIF\n"); return IF; }
