@@ -34,6 +34,7 @@ extern int line;
 %token NOT
 %token NUL
 %token OFF
+%token ON
 %token PAUSE
 %token SET
 %token SHIFT
@@ -94,41 +95,44 @@ extern int line;
 
 %%
 
-command_list : 
+command_list : command
              | command_list command
              ;
 
-command : echo_command
-        | rem_command
-        | choice_command
-        | if_command
-        | for_command
-        | goto_command
-        | cls_command
+command : normal_command
+        | silent_command
         ;
 
-echo_command : ECHO "off"
-             | ECHO "on"
-             | ECHO string
+silent_command : NOECHO normal_command
+               ;
+
+normal_command : echo_command
+               | rem_command
+               | choice_command
+               | if_command
+               | for_command
+               | goto_command
+               | cls_command
+               | label
+               ;
+
+echo_command : ECHO
              ;
-             
-string :
-       ;
 
 rem_command : REM
             ;
 
-choice_command :
+choice_command : CHOICE
                ;
 
-for_command : FOR PERCENT variable  IN LPAREN statement_list RPAREN DO command
+for_command : FOR PERCENT variable IN LPAREN statement_list RPAREN DO command
             ;
 
 if_command : IF NOT if_body 
            | IF if_body
            ;
                      
-statement_list : 
+statement_list : ID
                ;
 
 if_body : ERRORLEVEL NUMBER ID

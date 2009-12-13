@@ -1,4 +1,3 @@
-
 LEX_SRC = scanner.l
 YACC_SRC = parser.y
 
@@ -11,7 +10,7 @@ y.tab.c: $(YACC_SRC)
 	bison  -y -d -v $<
 
 lex.yy.c: $(LEX_SRC)
-	flex  -I $<
+	flex -i  $<
 
 clean:
 	rm -f lex.yy.c
