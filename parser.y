@@ -24,8 +24,9 @@ extern int line;
 %token CALL
 %token CHOICE
 %token CONSOLE 
+%token ELSE
 %token ERRORLEVEL
-%token EXISTS
+%token EXIST
 %token IF
 %token FOR 
 %token IN
@@ -88,14 +89,12 @@ extern int line;
 %token COLON
 %token SLASH
 %token BACKSLASH
-%token WHITESPACE 
-%token NEWLINE
 
 
 
 %%
 
-command_list : command
+command_list :
              | command_list command
              ;
 
@@ -106,7 +105,8 @@ command : normal_command
 silent_command : NOECHO normal_command
                ;
 
-normal_command : echo_command
+normal_command : compound_command
+							 | echo_command
                | rem_command
                | choice_command
                | if_command
@@ -114,7 +114,11 @@ normal_command : echo_command
                | goto_command
                | cls_command
                | label
+							 | del_command
                ;
+
+compound_command : LPAREN command_list RPAREN
+								 ;
 
 echo_command : ECHO
              ;
@@ -122,22 +126,26 @@ echo_command : ECHO
 rem_command : REM
             ;
 
+del_command : DEL filename
+						;
+
 choice_command : CHOICE
                ;
 
-for_command : FOR PERCENT variable IN LPAREN statement_list RPAREN DO command
+for_command : FOR PERCENT variable IN LPAREN command RPAREN DO command
             ;
 
-if_command : IF NOT if_body 
-           | IF if_body
-           ;
-                     
-statement_list : ID
-               ;
+if_command : if_part ELSE command
+					 | if_part 
+					 ;
 
-if_body : ERRORLEVEL NUMBER ID
+if_part : IF NOT if_body command
+        | IF if_body command
+        ;
+
+if_body : ERRORLEVEL NUMBER
         | ID STROP ID command 
-        | EXISTS filename command   
+        | EXIST filename command   
         ;
 
 goto_command : GOTO variable
@@ -153,8 +161,7 @@ label : COLON ID
 variable : PERCENT ID PERCENT
          ;
 
-filename : ID COLON SLASH ID
-         | ID /* yeah, riiight */
+filename : ID 
          ;
 
 %%
