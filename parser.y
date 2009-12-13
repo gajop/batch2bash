@@ -3,17 +3,16 @@
 */
 
 %{
-    #include <stdio.h>
-    #include "defs.h"
 
-	
-	int yyparse(void);
-    int yylex(void);
-    int yyerror(char *s);    
-    extern int line;
+#include <stdio.h>
+#include "defs.h"
 
-    
-	
+
+int yyparse(void);
+int yylex(void);
+int yyerror(char *s);    
+extern int line;
+
 %}
 
 /* keyword tokens */
@@ -96,77 +95,72 @@
 %%
 
 command_list : 
-						 | command_list command
-						 ;
+             | command_list command
+             ;
 
 command : echo_command
-	| rem_command
-	| choice_command
-	| if_command
-	| for_command
-	| goto_command
-	| cls_command
-	;
+        | rem_command
+        | choice_command
+        | if_command
+        | for_command
+        | goto_command
+        | cls_command
+        ;
 
 echo_command : ECHO "off"
              | ECHO "on"
              | ECHO string
-	     ;
-			 
+             ;
+             
 string :
-	;
+       ;
 
 rem_command : REM
-        	;
+            ;
 
 choice_command :
-	       ;
+               ;
 
-for_command :
-	FOR PERCENT variable  IN LPAREN statement_list RPAREN DO command
-						;
+for_command : FOR PERCENT variable  IN LPAREN statement_list RPAREN DO command
+            ;
 
 if_command : IF NOT if_body 
-					 | IF if_body
-					 ;
-					 
-statement_list:	
-								;
+           | IF if_body
+           ;
+                     
+statement_list : 
+               ;
 
 if_body : ERRORLEVEL NUMBER ID
-				| ID STROP ID command 
-				| EXISTS filename command	
-				;
+        | ID STROP ID command 
+        | EXISTS filename command   
+        ;
 
 goto_command : GOTO variable
-						 | GOTO ID
-						 ;
+             | GOTO ID
+             ;
 
 cls_command : CLS
-						;
+            ;
 
 label : COLON ID
       ;
 
 variable : PERCENT ID PERCENT
-				 ;
+         ;
 
 filename : ID COLON SLASH ID
-				 | ID /* yeah, riiight */
-				 ;
+         | ID /* yeah, riiight */
+         ;
 
 %%
 
-
-    int yyerror(char *s) {
-        fprintf(stderr, "\nERROR (%d): %s\n", line, s);
-        return 0;
-    }
-
-
+int yyerror(char *s) {
+    fprintf(stderr, "\nERROR (%d): %s\n", line, s);
+    return 0;
+}
 
 int main() {
-
     yyparse();
     return 0;
 }
