@@ -176,7 +176,7 @@ int yyerror(char *s) {
 
 int main(int argc, char *argv[]) {
     int opt;
-    while ((opt = getopt(argc, argv, "d:")) != -1) {
+    while ((opt = getopt(argc, argv, "d")) != -1) {
         switch (opt) {
             case 'd':
                 debug = 1;
