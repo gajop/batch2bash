@@ -51,6 +51,7 @@ extern int error;
 %token PERCENT
 %token LPAREN
 %token RPAREN
+%token DOT
 
 
 
@@ -115,25 +116,49 @@ normal_command : compound_command
                | for_command
                | goto_command
                | cls_command
+               | shift_command
                | label
                | del_command
+               | call_command
+               | pause_command
                ;
 
 compound_command : LPAREN command_list RPAREN
                                  ;
 
-echo_command : ECHO
+echo_command : NOECHO ECHO ON {
+                    /*see if echo is already on , if so , do nothing , else turn it on */
+                 }
+             | NOECHO ECHO OFF{
+                    /*see if echo is already off, if so , do nothinh , else turn it on*/
+                 }
+             | ECHO {
+                 /*regular screen echo , ???how to mimic windows echo command here???*/
+                 }
+             | ECHO DOT {
+                 /* if it`s only echo. print newline else "regular" screen echo, same as above*/
+                 }
              ;
-
-rem_command : REM
+pause_command: PAUSE {
+                /*display a message and continue after any key*/
+            }
+            ;
+    
+rem_command : REM {
+                /* comment , just regular comment , ktnxbye */
+            }
             ;
 
 del_command : DEL filename
             ;
 
-choice_command : CHOICE
+//choice [/c [<Choice1><Choice2><…>]] [/n] [/cs] [/t <Timeout> /d <Choice>] [/m <"Text">]
+// reference http://technet.microsoft.com/en-us/library/cc732504%28WS.10%29.aspx 
+choice_command : CHOICE {/*default Y/N choice */}
+               | CHOICE parameter_list 
                ;
-
+                
+//for {%variable|%%variable} in (set) do command [ CommandLineOptions]
 for_command : FOR PERCENT variable IN LPAREN command RPAREN DO command
             ;
 
@@ -154,7 +179,26 @@ goto_command : GOTO variable
              | GOTO ID
              ;
 
-cls_command : CLS
+cls_command : CLS {/*just call clear */}
+            ;
+
+shift_command : SHIFT {
+                /*default shift , forward , to %0 */
+            }
+            | SHIFT PARAMETER {
+                /*shift parameters forward , to %0 starting from PARAMETERth one 
+                 *  PARAMETER can only be /0 to /9 */
+            }
+ //         | SHIFT DOWN {
+                /*shift parameters backward , to last one ...
+                 * CHECH THIS!!! ms web site says nothing about it , bit shift /? does */
+ //         }
+            ;
+
+ 
+//call [[Drive:][Path] FileName [BatchParameters]] [:label [arguments]]
+call_command: CALL filename 
+        //  | see comment above , need to decide how to represent path 
             ;
 
 label : COLON ID
@@ -163,6 +207,10 @@ label : COLON ID
 variable : PERCENT ID PERCENT
          ;
 
+parameter_list: PARAMETER
+               | parameter_list PARAMETER
+               ; 
+               
 filename : ID 
          ;
 

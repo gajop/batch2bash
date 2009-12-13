@@ -62,7 +62,7 @@ geq                     { yylval = GE; if (DEBUG) print_token("RELOP\n"); return
 "%"                     { if (DEBUG) print_token("PERCENT\n"); return PERCENT; }
 "("                     { if (DEBUG) print_token("LPAREN\n"); return LPAREN; }   
 ")"                     { if (DEBUG) print_token("RPAREN\n"); return RPAREN; }   
-
+"."                     { if (DEBUG) print_token("DOT\n");  return DOT; }
 
 assign                  { if (DEBUG) print_token("ASSIGN\n"); return ASSIGN; }
 attrib                  { if (DEBUG) print_token("ATTRIB\n"); return ATTRIB; }
@@ -90,6 +90,7 @@ sort                    { if (DEBUG) print_token("SORT\n"); return SORT; }
 time                    { if (DEBUG) print_token("TIME\n"); return TIME; }
 type                    { if (DEBUG) print_token("TYPE\n"); return TYPE; }
 xcopy                   { if (DEBUG) print_token("XCOPY\n"); return XCOPY; }
+
 
 
 {letter}({letter}|{digit})*   { if (DEBUG) print_token("ID\n"); return ID; }
