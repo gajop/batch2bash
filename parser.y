@@ -12,6 +12,8 @@ int yyparse(void);
 int yylex(void);
 int yyerror(char *s);    
 extern int line;
+extern int debug;
+extern int error;
 
 %}
 
@@ -168,10 +170,19 @@ filename : ID
 
 int yyerror(char *s) {
     fprintf(stderr, "\nERROR (%d): %s\n", line, s);
+    error = 1;
     return 0;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    int opt;
+    while ((opt = getopt(argc, argv, "d:")) != -1) {
+        switch (opt) {
+            case 'd':
+                debug = 1;
+                break;
+        }
+    }
     yyparse();
-    return 0;
+    return error;
 }

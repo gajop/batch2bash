@@ -23,7 +23,7 @@ do
         let j=$j+1
     done
     ./batch2bash < $i > $i.output 2> $i.error
-    if [ -s $i.error ]; then
+    if [ $? != 0 ]; then
         echo -en '\E[40;31m'"[ERROR]"
         tput sgr0
         echo

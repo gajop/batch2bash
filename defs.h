@@ -3,13 +3,12 @@
 
 
 // relational operators
-enum {EQ, NE, LT, LE, GT, GE,NEG };
+enum { EQ, NE, LT, LE, GT, GE, NEG };
 
 //i/o redirect
-enum {W,A,R};
+enum { W, A, R };
 
 // wildcards 
-enum {ONE,MANY};
-
+enum { ONE, MANY };
 
 #endif
