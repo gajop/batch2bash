@@ -1,0 +1,62 @@
+ TODO list 
+
+just gramar for now , moving onto next things later 
+
+
+
+
+echo - seems to be done , need to see how to capture the whole string , since echo doesn't eat up spaces 
+rem[\t ]  - do we really need this [\t ] thing ? anywayz, done 
+"/".+     - should be checked , but i think its done
+call      - need to see how to represent paths 
+choice    - consider done , until parameter_list is done 
+con       - TODO
+else      - as a part of if , done
+errorlevel  - TODO
+exist       - TODO
+if        - done ?
+for       - done 
+in        - done  
+do        - done
+goto      - done
+not       - ? 
+nul       - ?
+off       - as part of echo , done
+on        - as part if echo , done
+pause     - done
+set       - TODO
+shift     - almost done , see comentst, /? says there is a DOWN keyword , but MSDN says nothing about it
+sgn       - ?
+equ       - ?
+neq       - ?
+lss       - ?
+leq       - ?
+gtr       - ? 
+geq       - ?
+
+assign    - todo
+attrib    - todo 
+cd        - todo 
+chdir     - todo
+cls       - done
+comp      - todo 
+copy      - todo 
+del       - done ? 
+deltr     - todo 
+dir       - todo
+erase     - todo
+exit      - todo
+fc        - todo
+find      - todo 
+md        - todo 
+mkdir     - todo 
+more      - todo
+move      - todo
+path      - todo 
+ren       - todo
+rd        - todo
+rmdir     - todo
+sort      - todo
+time      - todo
+type      - todo
+xcopy     - todo 
