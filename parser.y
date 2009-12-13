@@ -11,11 +11,14 @@
 int yyparse(void);
 int yylex(void);
 int yyerror(char *s);    
+void print_symbol(const char *string);
 extern int line;
 extern int debug;
 extern int error;
 
 %}
+
+%error-verbose
 
 /* keyword tokens */
 
@@ -53,9 +56,6 @@ extern int error;
 %token RPAREN
 %token DOT
 
-
-
-
 /* ms-dos command tokens */
 
 %token ASSIGN
@@ -87,18 +87,22 @@ extern int error;
 
 /* other tokens  */
 
-%token ID
-%token NUMBER
-%token COLON
-%token SLASH
 %token BACKSLASH
-
+%token COLON
+%token NUMBER
+%token NEWLINE
+%token ID
+%token SLASH
 
 
 %%
 
-command_list :
-             | command_list command
+program : command_list
+        | command_list NEWLINE
+        ;
+
+command_list : command
+             | command_list NEWLINE command
              ;
 
 command : normal_command
@@ -123,38 +127,43 @@ normal_command : compound_command
                | pause_command
                ;
 
-compound_command : LPAREN command_list RPAREN
-                                 ;
-
-echo_command : NOECHO ECHO ON {
-                    /*see if echo is already on , if so , do nothing , else turn it on */
-                 }
-             | NOECHO ECHO OFF{
-                    /*see if echo is already off, if so , do nothinh , else turn it on*/
-                 }
-             | ECHO {
-                 /*regular screen echo , ???how to mimic windows echo command here???*/
-                 }
-             | ECHO DOT {
-                 /* if it`s only echo. print newline else "regular" screen echo, same as above*/
-                 }
+newline_list : command_list
+             | NEWLINE command_list
+             | command_list NEWLINE
+             | NEWLINE command_list NEWLINE
              ;
-pause_command: PAUSE {
+
+compound_command : LPAREN newline_list RPAREN {  
+                       print_symbol("compound_command\n"); 
+                   }
+                 ;
+
+echo_command : ECHO {
+                   print_symbol("echo_command\n"); 
+                 /*regular screen echo , ???how to mimic windows echo command here???*/
+               }
+             ;
+pause_command : PAUSE {
+                    print_symbol("pause_command\n"); 
                 /*display a message and continue after any key*/
-            }
-            ;
+                }
+              ;
     
 rem_command : REM {
+                  print_symbol("rem_command\n");      
                 /* comment , just regular comment , ktnxbye */
-            }
+              }
             ;
 
-del_command : DEL filename
+del_command : DEL filename {
+                  print_symbol("del_command\n");
+              }
             ;
 
 //choice [/c [<Choice1><Choice2><…>]] [/n] [/cs] [/t <Timeout> /d <Choice>] [/m <"Text">]
 // reference http://technet.microsoft.com/en-us/library/cc732504%28WS.10%29.aspx 
-choice_command : CHOICE {/*default Y/N choice */}
+choice_command : CHOICE {/*default Y/N choice */
+                 }
                | CHOICE parameter_list 
                ;
                 
@@ -162,44 +171,56 @@ choice_command : CHOICE {/*default Y/N choice */}
 for_command : FOR PERCENT variable IN LPAREN command RPAREN DO command
             ;
 
-if_command : if_part ELSE command
-           | if_part 
+if_command : if_part ELSE command {
+                 print_symbol("if_command + else\n");
+             }
+           | if_part {
+                 print_symbol("if_command\n");
+             }
            ;
 
-if_part : IF NOT if_body command
-        | IF if_body command
+if_part : IF NOT if_body command {
+              print_symbol("if_part\n");
+          }
+        | IF if_body command {
+              print_symbol("if_part\n");
+          }
         ;
 
 if_body : ERRORLEVEL NUMBER
-        | ID STROP ID command 
-        | EXIST filename command   
+        | ID STROP ID 
+        | EXIST filename  
         ;
 
 goto_command : GOTO variable
-             | GOTO ID
+             | GOTO ID {
+                   print_symbol("goto_command\n");
+               }
              ;
 
-cls_command : CLS {/*just call clear */}
+cls_command : CLS {/*just call clear */
+                  print_symbol("cls_command\n");
+              }
             ;
 
 shift_command : SHIFT {
                 /*default shift , forward , to %0 */
-            }
-            | SHIFT PARAMETER {
+                }
+              | SHIFT PARAMETER {
                 /*shift parameters forward , to %0 starting from PARAMETERth one 
                  *  PARAMETER can only be /0 to /9 */
-            }
- //         | SHIFT DOWN {
-                /*shift parameters backward , to last one ...
-                 * CHECH THIS!!! ms web site says nothing about it , bit shift /? does */
- //         }
-            ;
+                }
+ //           | SHIFT DOWN {
+                  /*shift parameters backward , to last one ...
+                  * CHECH THIS!!! ms web site says nothing about it , bit shift /? does */
+ //           }
+              ;
 
  
 //call [[Drive:][Path] FileName [BatchParameters]] [:label [arguments]]
-call_command: CALL filename 
-        //  | see comment above , need to decide how to represent path 
-            ;
+call_command : CALL filename 
+        //   | see comment above , need to decide how to represent path 
+             ;
 
 label : COLON ID
       ;
@@ -207,7 +228,7 @@ label : COLON ID
 variable : PERCENT ID PERCENT
          ;
 
-parameter_list: PARAMETER
+parameter_list : PARAMETER
                | parameter_list PARAMETER
                ; 
                
@@ -217,7 +238,7 @@ filename : ID
 %%
 
 int yyerror(char *s) {
-    fprintf(stderr, "\nERROR (%d): %s\n", line, s);
+    fprintf(stderr, "\nerror: (%d): %s\n", line, s);
     error = 1;
     return 0;
 }
@@ -233,4 +254,11 @@ int main(int argc, char *argv[]) {
     }
     yyparse();
     return error;
+}
+
+
+void print_symbol(const char *string) {
+    if (debug) {
+        fprintf(stdout, "\t%s", string);
+    }
 }

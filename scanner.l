@@ -18,12 +18,13 @@ void print_token(const char *string);
 
 letter              [_a-zA-Z]
 digit               [0-9]
+newline             \n|\n\r 
 
 %%
 
-echo[[:blank:]"."].*    { yylval = (long)strdup(yytext + 4); if (DEBUG) print_token("ECHO\n"); return ECHO; }
-rem[\t ].*              { yylval = (long)strdup(yytext + 3); if (DEBUG) print_token("REM\n"); return REM; }
-"/".+                   { yylval = (long)strdup(yytext+1); if (DEBUG) print_token("PARAMETERS\n"); return PARAMETER; } 
+echo[[:blank:]"."][^\n)]*   { yylval = (long)strdup(yytext + 4); if (DEBUG) print_token("ECHO\n"); return ECHO; }
+rem[\t ].*                  { yylval = (long)strdup(yytext + 3); if (DEBUG) print_token("REM\n"); return REM; }
+"/".+                       { yylval = (long)strdup(yytext+1); if (DEBUG) print_token("PARAMETERS\n"); return PARAMETER; } 
 call                    { if (DEBUG) print_token("CALL\n"); return CALL; }
 choice                  { if (DEBUG) print_token("CHOICE\n"); return CHOICE; }
 con                     { if (DEBUG) print_token("CONSOLE\n"); return CONSOLE; }
@@ -92,29 +93,28 @@ type                    { if (DEBUG) print_token("TYPE\n"); return TYPE; }
 xcopy                   { if (DEBUG) print_token("XCOPY\n"); return XCOPY; }
 
 
+{letter}({letter}|{digit})*         { if (DEBUG) print_token("ID\n"); return ID; }
+{digit}+                            { if (DEBUG) print_token("NUMBER\n"); return NUMBER; }
+":"                                 { if (DEBUG) print_token("COLON\n"); return COLON; }
+"/"                                 { if (DEBUG) print_token("SLASH\n"); return SLASH; }
+"\\"                                { if (DEBUG) print_token("BACKSLASH\n"); return BACKSLASH; }
+[[:blank:]]+                        { }
+{newline}({newline}|[[:blank:]])*   { line++; if (DEBUG) print_token("NEWLINE\n"); return NEWLINE; }
+\"                                  { int in_string = 1;
+                                      char c;
+                                      while (in_string) {
+                                          c = input();
+                                          if (c == '"') {
+                                              in_string = 0;
+                                          } else if (c == '\n') {
+                                              line++;
+                                          } else if (c == EOF) {
+                                              fprintf(stderr, "\nerror: string not closed");
+                                          }
+                                      }
+                                  }
 
-{letter}({letter}|{digit})*   { if (DEBUG) print_token("ID\n"); return ID; }
-{digit}+                      { if (DEBUG) print_token("NUMBER\n"); return NUMBER; }
-":"                           { if (DEBUG) print_token("COLON\n"); return COLON; }
-"/"                           { if (DEBUG) print_token("SLASH\n"); return SLASH; }
-"\\"                          { if (DEBUG) print_token("BACKSLASH\n"); return BACKSLASH; }
-[\t ]+                        { }
-\n|\n\r                       { line++; }
-\"                            { int in_string = 1;
-                                    char c;
-                                    while (in_string) {
-                                        c = input();
-                                        if (c == '"') {
-                                            in_string = 0;
-                                        } else if (c == '\n') {
-                                            line++;
-                                        } else if (c == EOF) {
-                                            fprintf(stderr, "\nerror: string not closed");
-                                        }
-                                    }
-                              }
-
-.                            { printf("\n LEXICAL ERROR on character %c in line %d", yytext[0], line); error = 1; }
+.                                { fprintf(stderr, "\nlexical error: (%d): %c, %d line not currently working :D", line, yytext[0], yytext[0]); error = 1; }
 
 %%
 
