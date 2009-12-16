@@ -24,7 +24,7 @@ newline             \n|\n\r
 
 echo[[:blank:]"."][^\n)]*   { yylval = (long)strdup(yytext + 4); if (DEBUG) print_token("ECHO\n"); return ECHO; }
 rem[\t ].*                  { yylval = (long)strdup(yytext + 3); if (DEBUG) print_token("REM\n"); return REM; }
-"/".+                       { yylval = (long)strdup(yytext+1); if (DEBUG) print_token("PARAMETERS\n"); return PARAMETER; } 
+"/"[a-zA-Z0-9]+                       { yylval = (long)strdup(yytext+1); if (DEBUG) print_token("PARAMETERS\n"); return PARAMETER; } 
 call                    { if (DEBUG) print_token("CALL\n"); return CALL; }
 choice                  { if (DEBUG) print_token("CHOICE\n"); return CHOICE; }
 con                     { if (DEBUG) print_token("CONSOLE\n"); return CONSOLE; }
@@ -64,22 +64,23 @@ geq                     { yylval = GE; if (DEBUG) print_token("RELOP\n"); return
 "("                     { if (DEBUG) print_token("LPAREN\n"); return LPAREN; }   
 ")"                     { if (DEBUG) print_token("RPAREN\n"); return RPAREN; }   
 "."                     { if (DEBUG) print_token("DOT\n");  return DOT; }
+"="                     { if (DEBUG) print_token("ASSIGN_OP\n"); return ASSIGN_OP; }
 
 assign                  { if (DEBUG) print_token("ASSIGN\n"); return ASSIGN; }
 attrib                  { if (DEBUG) print_token("ATTRIB\n"); return ATTRIB; }
 cd                      { if (DEBUG) print_token("CD\n"); return CD; }
-chdir                   { if (DEBUG) print_token("CHDIR\n"); return CHDIR; }
+chdir                   { if (DEBUG) print_token("CHDIR\n"); return CD; }
 cls                     { if (DEBUG) print_token("CLS\n"); return CLS; }
 comp                    { if (DEBUG) print_token("COMP\n"); return COMP; }
 copy                    { if (DEBUG) print_token("COPY\n"); return COPY; }
 del                     { if (DEBUG) print_token("DEL\n"); return DEL; }
 deltr                   { if (DEBUG) print_token("DELTR\n"); return DELTR; }
 dir                     { if (DEBUG) print_token("DIR\n"); return DIR; }
-erase                   { if (DEBUG) print_token("ERASE\n"); return ERASE; }
+erase                   { if (DEBUG) print_token("ERASE\n"); return DEL; }
 exit                    { if (DEBUG) print_token("EXIT\n"); return EXIT; }
 fc                      { if (DEBUG) print_token("FC\n"); return FC; }
 find                    { if (DEBUG) print_token("FIND\n"); return FIND; }
-md                      { if (DEBUG) print_token("MD\n"); return MD; }
+md                      { if (DEBUG) print_token("MD\n"); return MKDIR; }
 mkdir                   { if (DEBUG) print_token("MKDIR\n"); return MKDIR; }
 more                    { if (DEBUG) print_token("MORE\n"); return MORE; }
 move                    { if (DEBUG) print_token("MOVE\n"); return MOVE; }
@@ -92,6 +93,8 @@ time                    { if (DEBUG) print_token("TIME\n"); return TIME; }
 type                    { if (DEBUG) print_token("TYPE\n"); return TYPE; }
 xcopy                   { if (DEBUG) print_token("XCOPY\n"); return XCOPY; }
 
+[a-zA-Z]\:          { if (DEBUG) print_token("DRIVE_ROOT\n"); yylval = (long)strdup(yytext); return DRIVE_ROOT;}
+
 
 {letter}({letter}|{digit})*         { if (DEBUG) print_token("ID\n"); return ID; }
 {digit}+                            { if (DEBUG) print_token("NUMBER\n"); return NUMBER; }
@@ -100,20 +103,8 @@ xcopy                   { if (DEBUG) print_token("XCOPY\n"); return XCOPY; }
 "\\"                                { if (DEBUG) print_token("BACKSLASH\n"); return BACKSLASH; }
 [[:blank:]]+                        { }
 {newline}({newline}|[[:blank:]])*   { line++; if (DEBUG) print_token("NEWLINE\n"); return NEWLINE; }
-\"                                  { int in_string = 1;
-                                      char c;
-                                      while (in_string) {
-                                          c = input();
-                                          if (c == '"') {
-                                              in_string = 0;
-                                          } else if (c == '\n') {
-                                              line++;
-                                          } else if (c == EOF) {
-                                              fprintf(stderr, "\nerror: string not closed");
-                                          }
-                                      }
-                                  }
 
+\".*\"                               {if(DEBUG)print_token("STRING\n");yylval = (long)strdup(yytext); return STRING; }
 .                                { fprintf(stderr, "\nlexical error: (%d): %c, %d line not currently working :D", line, yytext[0], yytext[0]); error = 1; }
 
 %%

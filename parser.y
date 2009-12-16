@@ -19,6 +19,7 @@ extern int error;
 %}
 
 %error-verbose
+%expect 1
 
 /* keyword tokens */
 
@@ -55,24 +56,25 @@ extern int error;
 %token LPAREN
 %token RPAREN
 %token DOT
+%token ASSIGN_OP
 
 /* ms-dos command tokens */
 
 %token ASSIGN
 %token ATTRIB
 %token CD
-%token CHDIR
+//%token CHDIR // same as CD 
 %token CLS
 %token COMP
 %token COPY
 %token DEL
 %token DELTR
 %token DIR
-%token ERASE
+//%token ERASE same as del
 %token EXIT
 %token FC
 %token FIND 
-%token MD
+//%token MD same as mkdir
 %token MKDIR
 %token MORE
 %token MOVE 
@@ -93,7 +95,8 @@ extern int error;
 %token NEWLINE
 %token ID
 %token SLASH
-
+%token STRING
+%token DRIVE_ROOT
 
 %%
 
@@ -126,7 +129,14 @@ normal_command : compound_command
                | label
                | del_command
                | call_command
+               | set_command
+               | cd_command
                | pause_command
+               | dir_command
+               | exit_command
+               | find_command
+               | mkdir_command
+               | more_command
                ;
 
 newline_list : command_list
@@ -136,57 +146,150 @@ newline_list : command_list
              ;
 
 compound_command : LPAREN newline_list RPAREN {  
-                       print_symbol("compound_command\n"); 
+                       print_symbol("compound_command"); 
                    }
                  ;
 
 echo_command : ECHO {
-                   print_symbol("echo_command\n"); 
+                   print_symbol("echo_command"); 
                  /*regular screen echo , ???how to mimic windows echo command here???*/
                }
              ;
 pause_command : PAUSE {
-                    print_symbol("pause_command\n"); 
+                    print_symbol("pause_command"); 
                 /*display a message and continue after any key*/
                 }
               ;
     
 rem_command : REM {
-                  print_symbol("rem_command\n");      
+                  print_symbol("rem_command");      
                 /* comment , just regular comment , ktnxbye */
               }
             ;
 
 del_command : DEL filename {
-                  print_symbol("del_command\n");
+                  print_symbol("del_command");
+              }
+            | DEL path{
+                  print_symbol("del_command");
+              }
+            | DEL absolute_path{
+                  print_symbol("del_command");
               }
             ;
-
+dir_command : DIR {
+                print_symbol("dir_command");
+            }
+            | DIR parameter_list {
+                print_symbol("dir_command paramter_list");
+            }
+            | DIR path {
+                print_symbol("dir_command path");
+            }
+            | DIR absolute_path {
+                print_symbol("dir_command absolute_path");
+            }
+            | DIR parameter_list path {
+                print_symbol("dir_command parameter_list path");
+            }
+            | DIR parameter_list absolute_path {
+                print_symbol("dir_command paramter_list absolute_path");
+            }
+            ;
+            
+exit_command : EXIT {
+                print_symbol("exit_command");
+             }
+     
+//very ugly THINK OF SOMETHING TO FIX THIS 
+// becouse it can be both find asd asd.txt , nad find "asd asd" asd.txt
+find_command : FIND STRING filename {
+                print_symbol("find_command filename");
+             }
+             | FIND STRING path {
+                print_symbol("find_command path");
+             }
+             | FIND STRING absolute_path {
+                print_symbol("find_command absolut_path");
+             }
+             | FIND parameter_list STRING filename {
+                print_symbol("find_command parameter_list filename");
+             }
+             | FIND parameter_list STRING path {
+                print_symbol("find_command parameter_list path");
+             }
+             | FIND parameter_list STRING absolute_path {
+                print_symbol("find_command parameter_list absolute_path");
+             }
+             |  FIND ID filename {
+                print_symbol("find_command filename");
+             }
+             | FIND ID path {
+                print_symbol("find_command path");
+             }
+             | FIND ID absolute_path {
+                print_symbol("find_command absolut_path");
+             }
+             | FIND parameter_list ID filename {
+                print_symbol("find_command parameter_list filename");
+             }
+             | FIND parameter_list ID path {
+                print_symbol("find_command parameter_list path");
+             }
+             | FIND parameter_list ID absolute_path {
+                print_symbol("find_command parameter_list absolute_path");
+             }
+             ;
+             
+mkdir_command: MKDIR path {
+                print_symbol("mkdir_command path");
+             }
+             | MKDIR filename  {// for now  , not filename but directory , think about it 
+                print_symbol("mkdir_command directory");
+             }
+             | MKDIR absolute_path {
+                print_symbol("mkdir_command absolute_path");
+             }
+             ;
+             
+more_command: MORE filename {
+                print_symbol("more_command filename");
+            }
+            | MORE parameter_list filename {
+                print_symbol("more_command parameter_list filename");
+            }
+            ;
 //choice [/c [<Choice1><Choice2><…>]] [/n] [/cs] [/t <Timeout> /d <Choice>] [/m <"Text">]
 // reference http://technet.microsoft.com/en-us/library/cc732504%28WS.10%29.aspx 
+
 choice_command : CHOICE {/*default Y/N choice */
-                 }
-               | CHOICE parameter_list 
+                    print_symbol("choce_command");
+               }
+               | CHOICE parameter_list {
+                    print_symbol("choce_command parameter_list");
+               }
                ;
                 
 //for {%variable|%%variable} in (set) do command [ CommandLineOptions]
-for_command : FOR PERCENT variable IN LPAREN command RPAREN DO command
+for_command : FOR PERCENT variable IN LPAREN command RPAREN DO command{
+                print_symbol("for_command");
+            }
             ;
 
 if_command : if_part ELSE command {
-                 print_symbol("if_command + else\n");
-             }
+                 print_symbol("if_command + else");
+           }
            | if_part {
-                 print_symbol("if_command\n");
-             }
+                 print_symbol("if_command");
+           }
            ;
 
 if_part : IF NOT if_body command {
-              print_symbol("if_part\n");
-          }
+              print_symbol("if_part");
+        }
         | IF if_body command {
-              print_symbol("if_part\n");
-          }
+              print_symbol("if_part");
+        }
         ;
 
 if_body : ERRORLEVEL NUMBER
@@ -196,22 +299,23 @@ if_body : ERRORLEVEL NUMBER
 
 goto_command : GOTO variable
              | GOTO ID {
-                   print_symbol("goto_command\n");
-               }
+                print_symbol("goto_command");
+             }
              ;
 
 cls_command : CLS {/*just call clear */
-                  print_symbol("cls_command\n");
-              }
+                print_symbol("cls_command");
+            }
             ;
 
 shift_command : SHIFT {
-                /*default shift , forward , to %0 */
-                }
+                print_symbol("shift_command");/*default shift , forward , to %0 */
+              }
               | SHIFT PARAMETER {
+                    print_symbol("shift_command");
                 /*shift parameters forward , to %0 starting from PARAMETERth one 
                  *  PARAMETER can only be /0 to /9 */
-                }
+              }
  //           | SHIFT DOWN {
                   /*shift parameters backward , to last one ...
                   * CHECH THIS!!! ms web site says nothing about it , bit shift /? does */
@@ -220,10 +324,49 @@ shift_command : SHIFT {
 
  
 //call [[Drive:][Path] FileName [BatchParameters]] [:label [arguments]]
-call_command : CALL filename 
-        //   | see comment above , need to decide how to represent path 
+call_command : CALL filename {
+                print_symbol("call_command filename");
+             }
+             | CALL path{
+                print_symbol("call_command path");
+             }
+             | CALL absolute_path{
+                print_symbol("call_command absolute_path");
+             }
              ;
+        
+set_command : SET {
+                print_symbol("set_command");
+            }
+            | SET parameter_list {
+                print_symbol("set_command parameter_list");
+            }
+            | SET ID ASSIGN_OP STRING {
+                print_symbol("set_command id = string");
+            }
+            | SET ID ASSIGN_OP ID {
+                print_symbol("set_command id = id");
+            }
+            | SET parameter_list ID ASSIGN_OP STRING{
+                print_symbol("set_command parameter_list id = string");
+            }
+            | SET parameter_list ID ASSIGN_OP ID{
+                print_symbol("set_command parameter_list id = id");
+            }
+            ;
 
+cd_command : CD 
+           | CD path {
+               print_symbol("cd_command path");
+           }
+           | CD absolute_path {
+               print_symbol("cd_command absolut_path");
+           }
+           | CD DRIVE_ROOT {
+               print_symbol("cd_command drive_root");
+           }
+           ;
+           
 label : COLON ID
       ;
 
@@ -235,7 +378,18 @@ parameter_list : PARAMETER
                ; 
                
 filename : ID 
+         | ID DOT ID
          ;
+
+
+absolute_path : DRIVE_ROOT  BACKSLASH path
+              ;
+
+path :  ID BACKSLASH 
+     | path  ID BACKSLASH
+     | path filename
+     ;
+     
 
 %%
 
@@ -261,6 +415,6 @@ int main(int argc, char *argv[]) {
 
 void print_symbol(const char *string) {
     if (debug) {
-        fprintf(stdout, "\t%s", string);
+        fprintf(stdout, "\t%s\n", string);
     }
 }

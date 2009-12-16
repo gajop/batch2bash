@@ -7,11 +7,11 @@ if [ ${#FILES} -lt 1 ]; then
     echo "there are no *.bat files"
     exit
 fi
-if [ ! -s ./batch2bash ]; then
+if [ ! -s ./../batch2bash ]; then
     echo -en '\E[40;31m'"[ERROR]"
     tput sgr0
     echo -en '  '
-    echo "batch2bash must exist and be in the same directory"
+    echo "batch2bash must exist and be in the parent  directory"
     exit
 fi
 for i in $FILES
@@ -22,7 +22,7 @@ do
         echo -n " "
         let j=$j+1
     done
-    ./batch2bash -d < $i > $i.output 2> $i.error
+    ./../batch2bash -d < $i > $i.output 2> $i.error
     if [ $? != 0 ]; then
         echo -en '\E[40;31m'"[ERROR]"
         tput sgr0
