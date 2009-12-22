@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include "defs.h"
+#include <unistd.h>
 
 
 int yyparse(void);
