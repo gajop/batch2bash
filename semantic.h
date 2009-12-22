@@ -4,28 +4,15 @@
 #include <list>
 #include <vector>
 #include <string>
+#include <set>
 
-class program {
-public:
-    label_list labels;
-    std::vector<jump> jumps;
-    std::vector<command*> commands;
-    void generate_bash();
-};
+class parameter_list;
 
-class command {
-protected:
-    int type;
-public:
-    std::vector<command> commands; 
-    string command_name;
-    parameter_list params; 
-    std::vector<string> args; //lol
-};
+enum parameter_type { SHORT_OPT, LONG_OPT, STRING };
 
 struct parameter {
     std::string name;
-    enum type = { SHORT_OPT, LONG_OPT, STRING };
+    parameter_type type;
 };
 
 class parameter_list {
@@ -37,15 +24,37 @@ public:
     int get_param_num() const;
 };
 
-struct jump { 
-    string label;
+enum command_type { cJUMP, cLABEL, cNORMAL };
+
+class command {
+public:
+    command_type type;
+    std::vector<command> commands; 
+    std::string name;
+    parameter_list params; 
     int line;
 };
 
-struct label {
+
+struct jump { 
+    std::string label;
+    int line;
+};
+
+class jump_list {
+public:
     std::vector<jump> jumps;
+    unsigned num_jumps() const;
+    jump& get_jump(unsigned line) const;
+    void add_jump(std::string label, int line) const;
+    void remove_jump(unsigned line) const;
+};
+
+struct label {
+    std::set<jump> jumps;
     std::string name;
     int line;
+    label(const std::string& name, int line) : name(name), line(line) {}
     //command*
 };
 
@@ -53,9 +62,19 @@ class label_list {
     std::set<label> labels;
 public:
     unsigned num_labels() const;
-    string get_label(unsigned num) const;
-    bool label_exists(const std::string& label) const; 
-    void add_label(const std::string& label); //throws exception if label already exists
-    void add_jump(const std::string& label);
+    label& get_label(std::string& name) const;
+    bool label_exists(const std::string& name) const; 
+    void add_label(const std::string& name, int line); //throws exception if label already exists
+    void add_jump(const jump& jmp);
 };
+
+class program {
+public:
+    label_list labels;
+    jump_list jumps;
+    std::vector<command*> commands;
+    void done();
+    void generate_bash();
+};
+
 #endif
