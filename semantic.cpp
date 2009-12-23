@@ -87,7 +87,7 @@ block* translate(command* parent, program* shared_program) {
         if (label_counter < labels.size() && line == labels[label_counter].line) {
             if (labels[label_counter].jumps.size() == 1 && prev.top().type == JUMP &&
                     child_jumps[jump_counter - 1].size() == 1 &&
-                    labels[label_counter].jumps.count(child_jumps[jump_counter - 1].front())) {
+                    labels[label_counter].jumps.back() == child_jumps[jump_counter - 1].front()) {
                 // COND1 SIMPLE* LABEL1 -> COND1 IF!1 SIMPLE* FI!1
                 //block new_block = generate_hidden_if(prev.top().pos, i);
                 child_blocks.erase(prev.top().pos + 1, i++);
@@ -102,7 +102,7 @@ block* translate(command* parent, program* shared_program) {
 		} else if (jump_counter < child_jumps.size() && line == child_jumps[jump_counter].front().line) {
             if (child_jumps[jump_counter].size() == 1 && prev.top().type == LABEL &&
                     labels[label_counter - 1].jumps.size() == 1 && 
-                    labels[label_counter - 1].jumps.count(child_jumps[jump_counter].front())) {
+                    labels[label_counter - 1].jumps.back() == child_jumps[jump_counter].front()) {
                 // LABEL1 SIMPLE* COND1 -> WHILE1 SIMPLE* COND1 DONE
      //           block new_block = generate_hidden_while(prev.top().pos, i);
                 child_blocks.erase(prev.top().pos + 1, ++i);
@@ -152,7 +152,7 @@ void program::done() {
             throw std::logic_error("jump to an unknown label");
         }
     }
-	for (std::set<label>::iterator i = unused.labels.begin(); i != unused.labels.end(); ++i) {
+	for (std::vector<label>::iterator i = unused.labels.begin(); i != unused.labels.end(); ++i) {
         labels.remove_label(i->name);
     }
 }
@@ -162,7 +162,7 @@ void program::generate_bash() {
 }
 
 bool label_list::label_exists(const std::string& name) const {
-    for (std::set<label>::iterator i = labels.begin(); i != labels.end(); ++i) {
+    for (std::vector<label>::const_iterator i = labels.begin(); i != labels.end(); ++i) {
         if (i->name == name) {
             return true;
         }
@@ -171,26 +171,43 @@ bool label_list::label_exists(const std::string& name) const {
 }
 
 void label_list::add_label(const std::string& name, int line) {
-    for (std::set<label>::iterator i = labels.begin(); i != labels.end(); ++i) {
+    for (std::vector<label>::iterator i = labels.begin(); i != labels.end(); ++i) {
         if (i->name == name) {
             throw std::logic_error("label already exists"); 
         }
     }
-    labels.insert(label(name, line));
+    labels.push_back(label(name, line));
 }
 void label_list::remove_label(const std::string& name) {
-    std::remove(labels.begin(), labels.end(), label(name, 42));
+    labels.erase(std::find(labels.begin(), labels.end(), label(name, 42)));
 }
 unsigned label_list::num_labels() const {
     return labels.size();
 }
 
 void label_list::add_jump(const jump& jmp) {
-    //std::set<label>::iterator lab = find(labels.begin(), labels.end(), jmp.label);
-	/*if (lab == labels.end()) {
+    std::vector<label>::iterator lab = find(labels.begin(), labels.end(), label(jmp.label, 42));
+	if (lab == labels.end()) {
         throw std::logic_error("label doesn't exists"); 
     } 
-    if (lab->jumps.find(jmp) == lab->jumps.end()) {
-        //lab->jumps.insert(jmp);
-    }*/
+    if (find(lab->jumps.begin(), lab->jumps.end(), jmp) == lab->jumps.end()) {
+        lab->jumps.push_back(jmp);
+    }
+}
+
+const label& label_list::get_label(std::string& name) const {
+    return *(find(labels.begin(), labels.end(), label(name, 42)));
+}
+
+label& label_list::get_label(std::string& name) {
+    return *(find(labels.begin(), labels.end(), label(name, 42)));
+}
+
+
+const jump& jump_list::get_jump(unsigned line) const {
+    return *(find(jumps.begin(), jumps.end(), jump(std::string("42"), line)));
+}
+
+jump& jump_list::get_jump(unsigned line) {
+    return *(find(jumps.begin(), jumps.end(), jump(std::string("42"), line)));
 }
