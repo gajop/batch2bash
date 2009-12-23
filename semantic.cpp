@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <stack>
+#include <set>
 
 enum block_type { bSIMPLE, bCOND, bLABEL, bHARD };
 
@@ -29,8 +30,8 @@ block operator +(const block& lhs, const block& rhs) {
 enum s_type { NONE = -1, LABEL, JUMP };
 struct previous {
     s_type type;
-    std::vector<block>::iterator pos;
-    previous(s_type type, std::vector<block>::iterator pos) : type(type), pos(pos) {}
+    std::vector<block*>::iterator pos;
+    previous(s_type type, std::vector<block*>::iterator pos) : type(type), pos(pos) {}
 };
 block* translate(command* parent, program* shared_program) {
     block* ret = new block(*parent);
@@ -90,7 +91,7 @@ block* translate(command* parent, program* shared_program) {
                 // COND1 SIMPLE* LABEL1 -> COND1 IF!1 SIMPLE* FI!1
                 //block new_block = generate_hidden_if(prev.top().pos, i);
                 child_blocks.erase(prev.top().pos + 1, i++);
-                *(prev.top().pos) = new_block;
+//                *(prev.top().pos) = new_block;
                 labels.erase(labels.begin() + label_counter);
                 child_jumps.erase(child_jumps.begin() + jump_counter - 1);
                 prev.pop();
@@ -98,14 +99,14 @@ block* translate(command* parent, program* shared_program) {
                 prev.push(previous(LABEL, i));
                 ++label_counter;
             }
-        } else if (jump_counter < child_jumps.size() && line == child_jumps[jump_counter].line) {
+		} else if (jump_counter < child_jumps.size() && line == child_jumps[jump_counter].front().line) {
             if (child_jumps[jump_counter].size() == 1 && prev.top().type == LABEL &&
                     labels[label_counter - 1].jumps.size() == 1 && 
-                    labels[label_counter - 1].jumps.front() == child_jumps[jump_counter].front()) {
+                    labels[label_counter - 1].jumps.count(child_jumps[jump_counter].front())) {
                 // LABEL1 SIMPLE* COND1 -> WHILE1 SIMPLE* COND1 DONE
-                block new_block = generate_hidden_while(prev.top().pos, i);
+     //           block new_block = generate_hidden_while(prev.top().pos, i);
                 child_blocks.erase(prev.top().pos + 1, ++i);
-                *(prev.top().pos) = new_block;
+     //           *(prev.top().pos) = new_block;
                 labels.erase(labels.begin() + label_counter - 1);
                 child_jumps.erase(child_jumps.begin() + jump_counter);
                 prev.pop();
@@ -122,8 +123,12 @@ block* translate(command* parent, program* shared_program) {
 
     }
 */
-    ret.child_blocks = child_blocks;
-    ret.child_jumps = child_jumps;
+    ret->child_blocks = child_blocks;
+	for (std::vector<std::vector<jump> >::iterator i = child_jumps.begin(); i != child_jumps.end(); ++i) {
+		for (std::vector<jump>::iterator j = i->begin(); j != i->end(); ++j) {
+			ret->child_jumps.push_back(*j);
+		}
+	}
     if (labels.size() > 0) { // there are some labels in this block to which no jump has been performed to
         ret->type = bHARD;
     } else if (child_jumps.size() > 0) {
@@ -135,30 +140,30 @@ block* translate(command* parent, program* shared_program) {
 }
 
 void program::done() { 
-    for (std::vector<jump>::iterator i = jumps.begin(); i != jumps.end(); ++i) {
-        add_jump(*i);
+	for (std::vector<jump>::iterator i = jumps.jumps.begin(); i != jumps.jumps.end(); ++i) {
+		labels.add_jump(*i);
     } 
     label_list unused = labels;
     // read the info file, all the documentation is there
-    for (int i = 0; i < jumps.size(); i++) {
-        if (unused.label_exists(jumps.label)) {
-            unused.label_remove(jumps.label);
+	for (std::vector<jump>::iterator i = jumps.jumps.begin(); i != jumps.jumps.end(); ++i) {
+		if (unused.label_exists(i->label)) {
+			unused.remove_label(i->label);
         } else {
             throw std::logic_error("jump to an unknown label");
         }
     }
-    for (std::set<string> i = unused.unused().begin(); i < unused.unused().end(); ++i) {
-        labels.remove(*i);
+	for (std::set<label>::iterator i = unused.labels.begin(); i != unused.labels.end(); ++i) {
+        labels.remove_label(i->name);
     }
 }
 
 void program::generate_bash() {
-    block ret = translate(commands.first());
+    block* ret = translate(commands.front(), this);
 }
 
-bool label_list::label_exists(const std::string& label) const {
+bool label_list::label_exists(const std::string& name) const {
     for (std::set<label>::iterator i = labels.begin(); i != labels.end(); ++i) {
-        if (i->name == label) {
+        if (i->name == name) {
             return true;
         }
     }
@@ -167,28 +172,25 @@ bool label_list::label_exists(const std::string& label) const {
 
 void label_list::add_label(const std::string& name, int line) {
     for (std::set<label>::iterator i = labels.begin(); i != labels.end(); ++i) {
-        if (i->name == label) {
+        if (i->name == name) {
             throw std::logic_error("label already exists"); 
         }
     }
     labels.insert(label(name, line));
 }
-
-void label_list::remove_label(const std::string& label) {
-    if (!labels.erase(label))
-        throw std::logic_error("label doesn't exists"); 
-    }
+void label_list::remove_label(const std::string& name) {
+    std::remove(labels.begin(), labels.end(), label(name, 42));
 }
 unsigned label_list::num_labels() const {
     return labels.size();
 }
 
 void label_list::add_jump(const jump& jmp) {
-    std::set<label>::iterator lab = labels.find(jmp.label)
-    if (lab == labels.end())
+    //std::set<label>::iterator lab = find(labels.begin(), labels.end(), jmp.label);
+	/*if (lab == labels.end()) {
         throw std::logic_error("label doesn't exists"); 
     } 
-    if (lab.jumps.find(jmp) == lab.jumps.end()) {
-        lab.jumps.insert(jmp);
-    }
+    if (lab->jumps.find(jmp) == lab->jumps.end()) {
+        //lab->jumps.insert(jmp);
+    }*/
 }

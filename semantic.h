@@ -39,7 +39,18 @@ public:
 struct jump { 
     std::string label;
     int line;
+    friend int operator <(const jump& lhs, const jump& rhs);
+    friend int operator ==(const jump& lhs, const jump& rhs);
 };
+
+
+int operator <(const jump& lhs, const jump& rhs) {
+	return lhs.line < rhs.line;
+}
+
+int operator ==(const jump& lhs, const jump& rhs) {
+	return lhs.line == rhs.line;
+}
 
 class jump_list {
 public:
@@ -55,17 +66,28 @@ struct label {
     std::string name;
     int line;
     label(const std::string& name, int line) : name(name), line(line) {}
+	friend int operator <(const label& lhs, const label& rhs);
+	friend int operator ==(const label& lhs, const label& rhs);
     //command*
 };
 
+int operator <(const label& lhs, const label& rhs) {
+	return lhs.name < rhs.name;
+}
+
+int operator ==(const label& lhs, const label& rhs) {
+	return lhs.name == rhs.name;
+}
+
 class label_list {
-    std::set<label> labels;
 public:
+	std::set<label> labels;
     unsigned num_labels() const;
     label& get_label(std::string& name) const;
     bool label_exists(const std::string& name) const; 
     void add_label(const std::string& name, int line); //throws exception if label already exists
     void add_jump(const jump& jmp);
+	void remove_label(const std::string& name);
 };
 
 class program {
