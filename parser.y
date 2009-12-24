@@ -137,6 +137,7 @@ normal_command : compound_command
                | find_command
                | mkdir_command
                | more_command
+	       | drive_command
                ;
 
 newline_list : command_list
@@ -332,6 +333,12 @@ path : PATH_LINE
 string : STRING 
        | ID
        ;
+drive_command : DRIVE_ROOT{
+               print_symbol("drive_command");
+           }
+
+	      ;
+	      
 
 %%
 
