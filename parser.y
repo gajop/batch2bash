@@ -192,19 +192,13 @@ exit_command : EXIT {
      
 //very ugly THINK OF SOMETHING TO FIX THIS 
 // becouse it can be both find asd asd.txt , nad find "asd asd" asd.txt
-find_command :  FIND STRING path {
+find_command :  FIND string path {
                 print_symbol("find_command path");
              }
-            | FIND parameter_list STRING path {
+            | FIND parameter_list string path {
                 print_symbol("find_command parameter_list path");
              }
-            | FIND ID path {
-                print_symbol("find_command path");
-             }
-            | FIND parameter_list ID path {
-                print_symbol("find_command parameter_list path");
-             }
-            ;
+           ;
              
 mkdir_command: MKDIR path {
                 print_symbol("mkdir_command path");
@@ -294,19 +288,13 @@ set_command : SET {
             | SET parameter_list {
                 print_symbol("set_command parameter_list");
             }
-            | SET ID ASSIGN_OP STRING {
+            | SET ID ASSIGN_OP string {
                 print_symbol("set_command id = string");
             }
-            | SET ID ASSIGN_OP ID {
-                print_symbol("set_command id = id");
-            }
-            | SET parameter_list ID ASSIGN_OP STRING{
+           | SET parameter_list ID ASSIGN_OP string{
                 print_symbol("set_command parameter_list id = string");
             }
-            | SET parameter_list ID ASSIGN_OP ID{
-                print_symbol("set_command parameter_list id = id");
-            }
-            ;
+           ;
 
 cd_command : CD 
            | CD path {
@@ -339,7 +327,11 @@ absolute_path : DRIVE_ROOT BACKSLASH PATH_LINE
 path : PATH_LINE
      | absolute_path 
      | filename		
-     ;    
+     ;   
+
+string : STRING 
+       | ID
+       ;
 
 %%
 
