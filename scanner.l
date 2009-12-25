@@ -105,14 +105,12 @@ xcopy                   { if (DEBUG) print_token("XCOPY\n"); return XCOPY; }
 "/"                                 { if (DEBUG) print_token("SLASH\n"); return SLASH; }
 "\\"                                { if (DEBUG) print_token("BACKSLASH\n"); return BACKSLASH; }
 [[:blank:]]+                        { }
-{newline}({newline}|[[:blank:]])*   {char *newline = yytext;
-					int i;
-					for(i=0; i<strlen(newline);i++) if(newline[i] == '\n') line++;  
-					if (DEBUG) print_token("NEWLINE\n"); 
-					  return NEWLINE;
-				 }
+{newline}({newline}|[[:blank:]])*   { for (int i = 0; yytext[i] != '\0'; i++) { 
+                                          if (yytext[i] == '\n') line++;
+                                      }
+                                          if (DEBUG) print_token("NEWLINE\n"); return NEWLINE; }
 \"\%?[a-z0-9[:blank:]]*\"                            {if(DEBUG)print_token("STRING\n");yylval = (long)strdup(yytext); return STRING; }
-.                                { fprintf(stderr, "\nlexical error: (%d): %c, %d line not currently working ", line, yytext[0], yytext[0]); error = 1; }
+.                                { fprintf(stderr, "\nlexical error: (%d): %c, %d line not currently working :D", line, yytext[0], yytext[0]); error = 1; }
 
 %%
 
