@@ -254,7 +254,7 @@ void program::print_program_tree() const {
             for (int i = 0; i < level; ++i) {
                 printf("\t");
             }
-            printf("%s\n", current->com->name.c_str());
+            printf("%s%d\n", current->com->name.c_str(), current->com->children.size());
         }
         if (current->visited < current->com->children.size()) {
             parents.push(tree_frame(current->com->children[current->visited++]));
