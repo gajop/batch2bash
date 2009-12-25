@@ -77,6 +77,7 @@ comp                    { if (DEBUG) print_token("COMP\n"); return COMP; }
 copy                    { if (DEBUG) print_token("COPY\n"); return COPY; }
 del                     { if (DEBUG) print_token("DEL\n"); return DEL; }
 deltr                   { if (DEBUG) print_token("DELTR\n"); return DELTR; }
+date			{ if (DEBUG) print_token("DATE\n"); return DATE; }
 dir                     { if (DEBUG) print_token("DIR\n"); return DIR; }
 erase                   { if (DEBUG) print_token("ERASE\n"); return DEL; }
 exit                    { if (DEBUG) print_token("EXIT\n"); return EXIT; }

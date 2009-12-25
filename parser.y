@@ -58,23 +58,21 @@ extern int error;
 %token DOT
 %token ASSIGN_OP
 %token PATH_LINE
-/* ms-dos command tokens */
 
+/* ms-dos command tokens */
 %token ASSIGN
 %token ATTRIB
 %token CD
-//%token CHDIR // same as CD 
 %token CLS
 %token COMP
 %token COPY
 %token DEL
 %token DELTR
 %token DIR
-//%token ERASE same as del
 %token EXIT
 %token FC
 %token FIND 
-//%token MD same as mkdir
+%token DATE
 %token MKDIR
 %token MORE
 %token MOVE 
@@ -141,10 +139,14 @@ normal_command : compound_command
                | more_command
 	       | drive_command
 	       | fc_command
+	       | date_command
+	       | time_command
                ;
 
 
-redir_command : command REDIRECT path {print_symbol("redirect command");}
+redir_command : command REDIRECT path {
+		print_symbol("redirect command");
+	      }
 	      ;
 
 newline_list : command_list
@@ -160,18 +162,15 @@ compound_command : LPAREN newline_list RPAREN {
 
 echo_command : ECHO {
                    print_symbol("echo_command"); 
-                 /*regular screen echo , ???how to mimic windows echo command here???*/
                }
              ;
 pause_command : PAUSE {
                     print_symbol("pause_command"); 
-                /*display a message and continue after any key*/
                 }
               ;
     
 rem_command : REM {
                   print_symbol("rem_command");      
-                /* comment , just regular comment , ktnxbye */
               }
             ;
 
@@ -201,8 +200,6 @@ exit_command : EXIT {
                 print_symbol("exit_command");
              }
      
-//very ugly THINK OF SOMETHING TO FIX THIS 
-// becouse it can be both find asd asd.txt , nad find "asd asd" asd.txt
 find_command :  FIND string path {
                 print_symbol("find_command path");
              }
@@ -223,8 +220,6 @@ more_command: MORE filename {
                 print_symbol("more_command parameter_list filename");
             }
             ;
-//choice [/c [<Choice1><Choice2><…>]] [/n] [/cs] [/t <Timeout> /d <Choice>] [/m <"Text">]
-// reference http://technet.microsoft.com/en-us/library/cc732504%28WS.10%29.aspx 
 
 choice_command : CHOICE {/*default Y/N choice */
                     print_symbol("choce_command");
@@ -234,7 +229,6 @@ choice_command : CHOICE {/*default Y/N choice */
                }
                ;
                 
-//for {%variable|%%variable} in (set) do command [ CommandLineOptions]
 for_command : FOR PERCENT variable IN LPAREN command RPAREN DO command{
                 print_symbol("for_command");
             }
@@ -267,27 +261,19 @@ goto_command : GOTO variable
              }
              ;
 
-cls_command : CLS {/*just call clear */
+cls_command : CLS {
                 print_symbol("cls_command");
             }
             ;
 
 shift_command : SHIFT {
-                print_symbol("shift_command");/*default shift , forward , to %0 */
+                print_symbol("shift_command");
               }
               | SHIFT PARAMETER {
                     print_symbol("shift_command");
-                /*shift parameters forward , to %0 starting from PARAMETERth one 
-                 *  PARAMETER can only be /0 to /9 */
               }
- //           | SHIFT DOWN {
-                  /*shift parameters backward , to last one ...
-                  * CHECH THIS!!! ms web site says nothing about it , bit shift /? does */
- //           }
               ;
 
- 
-//call [[Drive:][Path] FileName [BatchParameters]] [:label [arguments]]
 call_command :CALL path{
                 print_symbol("call_command path");
              }
@@ -328,6 +314,22 @@ fc_command : FC path path {
 	   	print_symbol("fc parameter_list path path");
 	   }
 	   ;
+
+date_command : DATE {
+	     	print_symbol("date_command");
+	     }
+	     | DATE parameter_list {
+		print_symbol("date_command parameters");
+	     }
+	     ; 
+
+time_command : TIME {
+		print_symbol("time_command");
+	     }
+	     | TIME parameter_list {
+		print_symbol("time_command parameters");
+	     }
+	     ;
            
 label : COLON ID
       ;
@@ -353,10 +355,9 @@ path : PATH_LINE
 string : STRING 
        | ID
        ;
-drive_command : DRIVE_ROOT{
+drive_command : DRIVE_ROOT {
                print_symbol("drive_command");
-           }
-
+              }
 	      ;
 	      
 
@@ -384,6 +385,6 @@ int main(int argc, char *argv[]) {
 
 void print_symbol(const char *string) {
     if (debug) {
-        fprintf(stdout, "\t%s\n", string);
+        fprintf(stdout, "\t%s %d\n", string,line);
     }
 }
