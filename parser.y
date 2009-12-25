@@ -114,7 +114,8 @@ command_list : command {
                  $$ = $1;
              }
              | redir_command {
-                 parent.top()->add_child((command*)($1));
+                 parents.top()->add_child((command*)($1));
+                 $$ = $1;
              }
              | command_list NEWLINE command {
                  parents.top()->add_child((command*)($3));
@@ -153,7 +154,6 @@ normal_command : compound_command { $$ = $1; }
                | find_command { $$ = $1; }
                | mkdir_command { $$ = $1; }
                | more_command { $$ = $1; }
-               | drive_command { $$ = $1; }
                | drive_command { $$ = $1; }
                | fc_command { $$ = $1; }
                | date_command { $$ = $1; }
@@ -364,11 +364,6 @@ cd_command : CD {
                print_symbol("cd_command path");
                $$ = long(new command("cd", line));
            }
-           
-           | CD DRIVE_ROOT { // exception , desn't do anything 
-               print_symbol("cd_command drive_root");
-               $$ = long(new command("cd", line));
-           }    
     	   | CD DRIVE_ROOT BACKSLASH { //exception , doesn't do anything 
                print_symbol("cd_command drive_root\\");
                $$ = long(new command("cd", line));
@@ -382,25 +377,31 @@ cd_command : CD {
 
 fc_command : FC path path {
                print_symbol("fc path path");
+               $$ = long(new command("fc", line));
     	   } 
 	       | FC parameter_list path path {
 	   	       print_symbol("fc parameter_list path path");
+               $$ = long(new command("fc", line));
     	   }
 	       ;
 
 date_command : DATE {
 	             print_symbol("date_command");
+                 $$ = long(new command("date", line));
     	     }
 	         | DATE parameter_list {
 		         print_symbol("date_command parameters");
+                 $$ = long(new command("date", line));
     	     }
 	         ; 
     
 time_command : TIME {
 		         print_symbol("time_command");
+                 $$ = long(new command("time", line));
     	     }
 	         | TIME parameter_list {
 		         print_symbol("time_command parameters");
+                 $$ = long(new command("time", line));
     	     }
 	         ;
                
