@@ -31,7 +31,7 @@ extern int error;
 %token ECHO 
 %token REM
 %token LABEL
-%token PARAMETER
+%token OPTION
 %token CALL
 %token CHOICE
 %token CONSOLE 
@@ -204,8 +204,8 @@ del_command : DEL path {
                   print_symbol("del_command");
                   $$ = long(new command("del", line));
               }
-            | DEL parameter_list  path {
-                   print_symbol("del_commandi parameter_list");
+            | DEL option_list  path {
+                   print_symbol("del_commandi option_list");
                    $$ = long(new command("del", line));
               }
             ;
@@ -213,7 +213,7 @@ dir_command : DIR {
                   print_symbol("dir_command");
                   $$ = long(new command("dir", line));
               }
-            | DIR parameter_list {
+            | DIR option_list {
                   print_symbol("dir_command paramter_list");
                   $$ = long(new command("dir", line));
               }
@@ -221,8 +221,8 @@ dir_command : DIR {
                   print_symbol("dir_command path");
                   $$ = long(new command("dir", line));
               }
-            | DIR parameter_list path {
-                  print_symbol("dir_command parameter_list path");
+            | DIR option_list path {
+                  print_symbol("dir_command option_list path");
                   $$ = long(new command("dir", line));
               }
             ;
@@ -237,8 +237,8 @@ find_command : FIND string path {
                    print_symbol("find_command path");
                    $$ = long(new command("find", line));
                }
-             | FIND parameter_list string path {
-                   print_symbol("find_command parameter_list path");
+             | FIND option_list string path {
+                   print_symbol("find_command option_list path");
                    $$ = long(new command("find", line));
                }
              ;
@@ -253,8 +253,8 @@ more_command : MORE filename {
                    print_symbol("more_command filename");
                    $$ = long(new command("more", line));
                }
-             | MORE parameter_list filename {
-                   print_symbol("more_command parameter_list filename");
+             | MORE option_list filename {
+                   print_symbol("more_command option_list filename");
                    $$ = long(new command("more", line));
                }
              ;
@@ -265,8 +265,8 @@ choice_command : CHOICE {/*default Y/N choice */
                      print_symbol("choce_command");
                      $$ = long(new command("choice", line));
                  }
-               | CHOICE parameter_list {
-                     print_symbol("choce_command parameter_list");
+               | CHOICE option_list {
+                     print_symbol("choce_command option_list");
                      $$ = long(new command("choice", line));
                  }
                ;
@@ -325,11 +325,15 @@ if_body : ERRORLEVEL NUMBER
 
 goto_command : GOTO variable {
                    print_symbol("goto_command");
-                   $$ = long(new command("goto", line));
+                   command* goto_command = new command("goto", line);
+                   goto_command->add_string((char *)($2));
+                   $$ = long(goto_command);
                }
              | GOTO ID {
                    print_symbol("goto_command");
-                   $$ = long(new command("goto", line));
+                   command* goto_command = new command("goto", line);
+                   goto_command->add_string((char *)($2));
+                   $$ = long(goto_command);
                }
              ;
 
@@ -343,7 +347,7 @@ shift_command : SHIFT {
                     print_symbol("shift_command");
                     $$ = long(new command("shift", line));
                 }
-              | SHIFT PARAMETER {
+              | SHIFT OPTION {
                     print_symbol("shift_command");
                     $$ = long(new command("shift", line));
                 }
@@ -358,16 +362,16 @@ set_command : SET {
                   print_symbol("set_command");
                   $$ = long(new command("set", line));
               }
-            | SET parameter_list {
-                  print_symbol("set_command parameter_list");
+            | SET option_list {
+                  print_symbol("set_command option_list");
                   $$ = long(new command("set", line));
               }
             | SET ID ASSIGN_OP string {
                   print_symbol("set_command id = string");
                   $$ = long(new command("set", line));
               }
-            | SET parameter_list ID ASSIGN_OP string{
-                  print_symbol("set_command parameter_list id = string");
+            | SET option_list ID ASSIGN_OP string {
+                  print_symbol("set_command option_list id = string");
                   $$ = long(new command("set", line));
               }
             ;
@@ -394,8 +398,8 @@ fc_command : FC path path {
                  print_symbol("fc path path");
                  $$ = long(new command("fc", line));
     	     } 
-	       | FC parameter_list path path {
-	   	         print_symbol("fc parameter_list path path");
+	       | FC option_list path path {
+	   	         print_symbol("fc option_list path path");
                  $$ = long(new command("fc", line));
     	     }
 	       ;
@@ -404,8 +408,8 @@ date_command : DATE {
 	               print_symbol("date_command");
                    $$ = long(new command("date", line));
     	       }
-	         | DATE parameter_list {
-		           print_symbol("date_command parameters");
+	         | DATE option_list {
+		           print_symbol("date_command arguments");
                    $$ = long(new command("date", line));
                }
 	         ; 
@@ -414,8 +418,8 @@ time_command : TIME {
 		           print_symbol("time_command");
                    $$ = long(new command("time", line));
     	       }
-	         | TIME parameter_list {
-		           print_symbol("time_command parameters");
+	         | TIME option_list {
+		           print_symbol("time_command arguments");
                    $$ = long(new command("time", line));
     	       }
 	         ;
@@ -428,17 +432,21 @@ drive_command : DRIVE_ROOT {
                
 label : COLON ID {
             print_symbol("label");
-            $$ = long(new command("label", line));
+            command* label = new command("label", line);
+            label->add_string((char *)($2));
+            $$ = long(label);
         }
       ;
 
-variable : PERCENT ID PERCENT
+variable : PERCENT ID PERCENT {
+               $$ = $2; //hmm
+           }
          ;
 
-parameter_list : PARAMETER
-               | parameter_list PARAMETER
-               ; 
-               
+option_list : OPTION
+            | option_list OPTION
+            ; 
+
 filename : ID 
          | ID DOT ID
          ;
@@ -476,8 +484,11 @@ int main(int argc, char *argv[]) {
     parents.push(begin);
     progrm.root = begin;
     yyparse();
-    if (debug != 0 && !error) {
-        progrm.print_program_tree();
+    if (!error) {
+        if (debug != 0 && !error) {
+            progrm.print_program_tree();
+        }
+        progrm.generate_bash(debug);
     }
     return error;
 }

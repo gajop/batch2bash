@@ -6,21 +6,22 @@
 #include <string>
 #include <set>
 
-class parameter_list;
+class argument_list;
 
-enum parameter_type { SHORT_OPT, LONG_OPT, STRING__ };
+enum argument_type { aOPT, aSTRING };
 
-struct parameter {
+struct argument {
     std::string name;
-    parameter_type type;
+    argument_type type;
+    argument(const std::string& name, const argument_type& type) : name(name), type(type) {}
 };
 
-class parameter_list {
-    std::vector<parameter> parameters;
+class argument_list {
+    std::vector<argument> arguments;
 public:
-    void add_string();
-    void add_option(bool is_short = 1); //short_option: -v -r, long option --verbose --recursive
-    parameter get_parameter(int indx) const;
+    void add_string(const std::string& value);
+    void add_option(const std::string& value);
+    argument get_argument(int indx) const;
     int get_param_num() const;
 };
 
@@ -31,10 +32,12 @@ public:
     command_type type;
     std::vector<command*> children; 
     std::string name;
-    parameter_list params; 
+    argument_list args; 
     int line;
     command(const std::string& name, int line) : name(name), line(line) {}
     void add_child(command* child); 
+    void add_option(const std::string& value);
+    void add_string(const std::string& value);
 };
 
 
@@ -81,13 +84,14 @@ public:
 };
 
 class program {
+    void index_jumps_labels();
+    void connect_jumps();
 public:
     label_list labels;
     jump_list jumps;
     command* root;
     program();
-    void done();
-    void generate_bash();
+    void generate_bash(int debug = 0);
     void print_program_tree() const;
 };
 

@@ -139,7 +139,39 @@ block* translate(command* parent, program* shared_program) {
     return ret;        
 }
 
-void program::done() { 
+struct tree_frame {
+    command* com;
+    int visited;
+    tree_frame(command* com, int visited = 0) : com(com), visited(visited) { }
+};
+
+void program::index_jumps_labels() {
+    labels.labels.clear();
+    jumps.jumps.clear();
+    std::stack<tree_frame> parents;
+    parents.push(tree_frame(root));
+    tree_frame* current;
+    while (!parents.empty()) {
+        current = &parents.top();
+        
+        if (!current->visited) {
+            if (current->com->name == "label") {
+                labels.labels.push_back(label(current->com->args.get_argument(0).name,
+                            current->com->line));
+            } else if (current->com->name == "goto") {
+                jumps.jumps.push_back(jump(current->com->args.get_argument(0).name,
+                            current->com->line));
+            }
+        }
+        if (current->visited < current->com->children.size()) {
+            parents.push(tree_frame(current->com->children[current->visited++]));
+        } else {
+            parents.pop();
+        }
+    }
+}
+
+void program::connect_jumps() { 
 	for (std::vector<jump>::iterator i = jumps.jumps.begin(); i != jumps.jumps.end(); ++i) {
 		labels.add_jump(*i);
     } 
@@ -157,8 +189,20 @@ void program::done() {
     }
 }
 
-void program::generate_bash() {
-    block* ret = translate(root, this);
+void program::generate_bash(int debug) {
+    index_jumps_labels();
+    connect_jumps();
+    if (debug != 0) {
+        for (std::vector<label>::iterator i = labels.labels.begin(); 
+                i != labels.labels.end(); ++i) {
+            printf("%d:%s:\n", i->line, i->name.c_str());
+            for (std::vector<jump>::iterator j = i->jumps.begin(); 
+                    j != i->jumps.end(); ++j) {
+                printf("\t%d\n", j->line);
+            }
+        }
+    }
+ //   block* ret = translate(root, this);
 }
 
 bool label_list::label_exists(const std::string& name) const {
@@ -236,12 +280,6 @@ program::program() {
     root = NULL;
 }
 
-struct tree_frame {
-    command* com;
-    int visited;
-    tree_frame(command* com, int visited = 0) : com(com), visited(visited) { }
-};
-
 void program::print_program_tree() const {
     std::stack<tree_frame> parents;
     parents.push(tree_frame(root));
@@ -264,4 +302,24 @@ void program::print_program_tree() const {
             --level;
         }
     }
+}
+
+void argument_list::add_option(const std::string& value) {
+    arguments.push_back(argument(value, aOPT));
+}
+
+void argument_list::add_string(const std::string& value) {
+    arguments.push_back(argument(value, aSTRING));
+}
+
+argument argument_list::get_argument(int indx) const {
+    return arguments.at(indx);
+}
+
+void command::add_option(const std::string& value) {
+    args.add_option(value);
+}
+
+void command::add_string(const std::string& value) {
+    args.add_string(value);
 }

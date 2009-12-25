@@ -26,7 +26,7 @@ echo[[:blank:]"."][^\n)]*   { yylval = (long)strdup(yytext + 4); if (DEBUG) prin
 
 (rem[\t ]+.*)|rem                  { yylval = (long)strdup(yytext + 3); if (DEBUG) print_token("REM\n"); return REM; }
 
-"/"[a-zA-Z0-9]+                       { yylval = (long)strdup(yytext+1); if (DEBUG) print_token("PARAMETERS\n"); return PARAMETER; } 
+"/"[a-zA-Z0-9]+                       { yylval = (long)strdup(yytext+1); if (DEBUG) print_token("ARGUMENTS\n"); return OPTION; } 
 call                    { if (DEBUG) print_token("CALL\n"); return CALL; }
 choice                  { if (DEBUG) print_token("CHOICE\n"); return CHOICE; }
 con                     { if (DEBUG) print_token("CONSOLE\n"); return CONSOLE; }
@@ -99,7 +99,7 @@ xcopy                   { if (DEBUG) print_token("XCOPY\n"); return XCOPY; }
 [a-zA-Z]\:          { if (DEBUG) print_token("DRIVE_ROOT\n"); yylval = (long)strdup(yytext); return DRIVE_ROOT;}
 [a-zA-Z0-9]+\\+[a-zA-Z0-9\\]*	    {  if (DEBUG) print_token("PATH_LINE\n"); yylval = (long)strdup(yytext); return PATH_LINE;}
 
-{letter}({letter}|{digit})*         { if (DEBUG) print_token("ID\n"); return ID; }
+{letter}({letter}|{digit})*         { yylval = (long)strdup(yytext); if (DEBUG) print_token("ID\n"); return ID; }
 {digit}+                            { if (DEBUG) print_token("NUMBER\n"); return NUMBER; }
 ":"                                 { if (DEBUG) print_token("COLON\n"); return COLON; }
 "/"                                 { if (DEBUG) print_token("SLASH\n"); return SLASH; }
