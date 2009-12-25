@@ -8,7 +8,7 @@
 
 class parameter_list;
 
-enum parameter_type { SHORT_OPT, LONG_OPT, STRING };
+enum parameter_type { SHORT_OPT, LONG_OPT, STRING__ };
 
 struct parameter {
     std::string name;
@@ -29,10 +29,12 @@ enum command_type { cJUMP, cLABEL, cNORMAL };
 class command {
 public:
     command_type type;
-    std::vector<command> commands; 
+    std::vector<command*> children; 
     std::string name;
     parameter_list params; 
     int line;
+    command(const std::string& name, int line) : name(name), line(line) {}
+    void add_child(command* child); 
 };
 
 
@@ -44,14 +46,6 @@ struct jump {
     friend int operator ==(const jump& lhs, const jump& rhs);
 };
 
-
-int operator <(const jump& lhs, const jump& rhs) {
-	return lhs.line < rhs.line;
-}
-
-int operator ==(const jump& lhs, const jump& rhs) {
-	return lhs.line == rhs.line;
-}
 
 class jump_list {
 public:
@@ -74,14 +68,6 @@ public:
     //command*
 };
 
-int operator <(const label& lhs, const label& rhs) {
-	return lhs.name < rhs.name;
-}
-
-int operator ==(const label& lhs, const label& rhs) {
-	return lhs.name == rhs.name;
-}
-
 class label_list {
 public:
 	std::vector<label> labels;
@@ -98,9 +84,11 @@ class program {
 public:
     label_list labels;
     jump_list jumps;
-    std::vector<command*> commands;
+    command* root;
+    program();
     void done();
     void generate_bash();
+    void print_program_tree() const;
 };
 
 #endif

@@ -35,7 +35,7 @@ struct previous {
 };
 block* translate(command* parent, program* shared_program) {
     block* ret = new block(*parent);
-    if (parent->commands.empty()) {
+    if (parent->children.empty()) {
         if (parent->type == cJUMP) { 
             ret->type = bCOND;
             ret->jmplabel.jmp = &shared_program->jumps.get_jump(parent->line);
@@ -51,9 +51,9 @@ block* translate(command* parent, program* shared_program) {
     std::vector<label> labels;
     std::vector<std::vector<jump> > child_jumps; //recursively
     block* result;
-    for (std::vector<command>::iterator i = parent->commands.begin(); 
-            i != parent->commands.end(); ++i) {
-        result = translate(&(*i), shared_program);
+    for (std::vector<command*>::iterator i = parent->children.begin(); 
+            i != parent->children.end(); ++i) {
+        result = translate(*i, shared_program);
         switch (result->type) {
             case bSIMPLE :
                 if (!child_blocks.empty() && child_blocks.back()->type == bSIMPLE) {
@@ -158,7 +158,7 @@ void program::done() {
 }
 
 void program::generate_bash() {
-    block* ret = translate(commands.front(), this);
+    block* ret = translate(root, this);
 }
 
 bool label_list::label_exists(const std::string& name) const {
@@ -210,4 +210,58 @@ const jump& jump_list::get_jump(unsigned line) const {
 
 jump& jump_list::get_jump(unsigned line) {
     return *(find(jumps.begin(), jumps.end(), jump(std::string("42"), line)));
+}
+
+int operator <(const jump& lhs, const jump& rhs) {
+	return lhs.line < rhs.line;
+}
+
+int operator ==(const jump& lhs, const jump& rhs) {
+	return lhs.line == rhs.line;
+}
+
+int operator <(const label& lhs, const label& rhs) {
+	return lhs.name < rhs.name;
+}
+
+int operator ==(const label& lhs, const label& rhs) {
+	return lhs.name == rhs.name;
+}
+
+void command::add_child(command* child) {
+    children.push_back(child);
+}
+
+program::program() { 
+    root = NULL;
+}
+
+struct tree_frame {
+    command* com;
+    int visited;
+    tree_frame(command* com, int visited = 0) : com(com), visited(visited) { }
+};
+
+void program::print_program_tree() const {
+    std::stack<tree_frame> parents;
+    parents.push(tree_frame(root));
+    tree_frame* current;
+    int level = 0;
+    printf("\nsemantic command tree:\n");
+    while (!parents.empty()) {
+        current = &parents.top();
+        if (!current->visited) {
+            for (int i = 0; i < level; ++i) {
+                printf("\t");
+            }
+            printf("%s\n", current->com->name.c_str());
+        }
+        if (current->visited < current->com->children.size()) {
+            parents.push(tree_frame(current->com->children[current->visited++]));
+            ++level;
+        } else {
+            parents.pop();
+            --level;
+        }
+    }
 }
