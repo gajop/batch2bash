@@ -23,7 +23,9 @@ newline             \n|\n\r
 %%
 
 echo[[:blank:]"."][^\n)]*   { yylval = (long)strdup(yytext + 4); if (DEBUG) print_token("ECHO\n"); return ECHO; }
-rem[\t ].*                  { yylval = (long)strdup(yytext + 3); if (DEBUG) print_token("REM\n"); return REM; }
+
+(rem[\t ]+.*)|rem                  { yylval = (long)strdup(yytext + 3); if (DEBUG) print_token("REM\n"); return REM; }
+
 "/"[a-zA-Z0-9]+                       { yylval = (long)strdup(yytext+1); if (DEBUG) print_token("PARAMETERS\n"); return PARAMETER; } 
 call                    { if (DEBUG) print_token("CALL\n"); return CALL; }
 choice                  { if (DEBUG) print_token("CHOICE\n"); return CHOICE; }
@@ -103,9 +105,8 @@ xcopy                   { if (DEBUG) print_token("XCOPY\n"); return XCOPY; }
 "\\"                                { if (DEBUG) print_token("BACKSLASH\n"); return BACKSLASH; }
 [[:blank:]]+                        { }
 {newline}({newline}|[[:blank:]])*   { line++; if (DEBUG) print_token("NEWLINE\n"); return NEWLINE; }
-
-\".*\"                               {if(DEBUG)print_token("STRING\n");yylval = (long)strdup(yytext); return STRING; }
-.                                { fprintf(stderr, "\nlexical error: (%d): %c, %d line not currently working :D", line, yytext[0], yytext[0]); error = 1; }
+\"\%?[a-z0-9[:blank:]]*\"                            {if(DEBUG)print_token("STRING\n");yylval = (long)strdup(yytext); return STRING; }
+.                                { fprintf(stderr, "\nlexical error: (%d): %c, %d line not currently working ", line, yytext[0], yytext[0]); error = 1; }
 
 %%
 

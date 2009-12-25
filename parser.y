@@ -107,7 +107,9 @@ program : NEWLINE command_list
         ;
 
 command_list : command
+	     | redir_command
              | command_list NEWLINE command
+	     | command_list NEWLINE redir_command
              ;
 
 command : normal_command
@@ -138,7 +140,12 @@ normal_command : compound_command
                | mkdir_command
                | more_command
 	       | drive_command
+	       | fc_command
                ;
+
+
+redir_command : command REDIRECT path {print_symbol("redirect command");}
+	      ;
 
 newline_list : command_list
              | NEWLINE command_list
@@ -168,10 +175,13 @@ rem_command : REM {
               }
             ;
 
-del_command : 
-             DEL path{
+del_command : DEL path{
                   print_symbol("del_command");
-              }
+           }
+           |  DEL parameter_list  path{
+                  print_symbol("del_commandi parameter_list");
+           }
+   
            ;
 dir_command : DIR {
                 print_symbol("dir_command");
@@ -247,7 +257,7 @@ if_part : IF NOT if_body command {
         ;
 
 if_body : ERRORLEVEL NUMBER
-        | ID STROP ID 
+        | string STROP string 
         | EXIST filename  
         ;
 
@@ -302,10 +312,22 @@ cd_command : CD
                print_symbol("cd_command path");
            }
            
-           | CD DRIVE_ROOT {
+           | CD DRIVE_ROOT { // exception , desn't do anything 
                print_symbol("cd_command drive_root");
+           }    
+	   | CD DRIVE_ROOT BACKSLASH { //exception , doesn't do anything 
+               print_symbol("cd_command drive_root\\");
            }
+      
            ;
+
+fc_command : FC path path {
+	   	print_symbol("fc path path");
+	   } 
+	   | FC parameter_list path path {
+	   	print_symbol("fc parameter_list path path");
+	   }
+	   ;
            
 label : COLON ID
       ;
@@ -322,11 +344,9 @@ filename : ID
          ;
 
 
-absolute_path : DRIVE_ROOT BACKSLASH PATH_LINE
-              ;
-
 path : PATH_LINE
-     | absolute_path 
+     | DRIVE_ROOT BACKSLASH PATH_LINE
+     | DRIVE_ROOT BACKSLASH filename 
      | filename		
      ;   
 
