@@ -94,7 +94,7 @@ type                    { if (DEBUG) print_token("TYPE\n"); return TYPE; }
 xcopy                   { if (DEBUG) print_token("XCOPY\n"); return XCOPY; }
 
 [a-zA-Z]\:          { if (DEBUG) print_token("DRIVE_ROOT\n"); yylval = (long)strdup(yytext); return DRIVE_ROOT;}
-
+[a-zA-Z0-9]+\\+[a-zA-Z0-9\\]*	    {  if (DEBUG) print_token("PATH_LINE\n"); yylval = (long)strdup(yytext); return PATH_LINE;}
 
 {letter}({letter}|{digit})*         { if (DEBUG) print_token("ID\n"); return ID; }
 {digit}+                            { if (DEBUG) print_token("NUMBER\n"); return NUMBER; }

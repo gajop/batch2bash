@@ -58,7 +58,7 @@ extern int error;
 %token RPAREN
 %token DOT
 %token ASSIGN_OP
-
+%token PATH_LINE
 /* ms-dos command tokens */
 
 %token ASSIGN
@@ -138,6 +138,7 @@ normal_command : compound_command
                | find_command
                | mkdir_command
                | more_command
+	       | drive_command
                ;
 
 newline_list : command_list
@@ -168,16 +169,11 @@ rem_command : REM {
               }
             ;
 
-del_command : DEL filename {
+del_command : 
+             DEL path{
                   print_symbol("del_command");
               }
-            | DEL path{
-                  print_symbol("del_command");
-              }
-            | DEL absolute_path{
-                  print_symbol("del_command");
-              }
-            ;
+           ;
 dir_command : DIR {
                 print_symbol("dir_command");
             }
@@ -187,16 +183,10 @@ dir_command : DIR {
             | DIR path {
                 print_symbol("dir_command path");
             }
-            | DIR absolute_path {
-                print_symbol("dir_command absolute_path");
-            }
-            | DIR parameter_list path {
+           | DIR parameter_list path {
                 print_symbol("dir_command parameter_list path");
             }
-            | DIR parameter_list absolute_path {
-                print_symbol("dir_command paramter_list absolute_path");
-            }
-            ;
+           ;
             
 exit_command : EXIT {
                 print_symbol("exit_command");
@@ -204,54 +194,18 @@ exit_command : EXIT {
      
 //very ugly THINK OF SOMETHING TO FIX THIS 
 // becouse it can be both find asd asd.txt , nad find "asd asd" asd.txt
-find_command : FIND STRING filename {
-                print_symbol("find_command filename");
-             }
-             | FIND STRING path {
+find_command :  FIND string path {
                 print_symbol("find_command path");
              }
-             | FIND STRING absolute_path {
-                print_symbol("find_command absolut_path");
-             }
-             | FIND parameter_list STRING filename {
-                print_symbol("find_command parameter_list filename");
-             }
-             | FIND parameter_list STRING path {
+            | FIND parameter_list string path {
                 print_symbol("find_command parameter_list path");
              }
-             | FIND parameter_list STRING absolute_path {
-                print_symbol("find_command parameter_list absolute_path");
-             }
-             |  FIND ID filename {
-                print_symbol("find_command filename");
-             }
-             | FIND ID path {
-                print_symbol("find_command path");
-             }
-             | FIND ID absolute_path {
-                print_symbol("find_command absolut_path");
-             }
-             | FIND parameter_list ID filename {
-                print_symbol("find_command parameter_list filename");
-             }
-             | FIND parameter_list ID path {
-                print_symbol("find_command parameter_list path");
-             }
-             | FIND parameter_list ID absolute_path {
-                print_symbol("find_command parameter_list absolute_path");
-             }
-             ;
+           ;
              
 mkdir_command: MKDIR path {
                 print_symbol("mkdir_command path");
              }
-             | MKDIR filename  {// for now  , not filename but directory , think about it 
-                print_symbol("mkdir_command directory");
-             }
-             | MKDIR absolute_path {
-                print_symbol("mkdir_command absolute_path");
-             }
-             ;
+            ;
              
 more_command: MORE filename {
                 print_symbol("more_command filename");
@@ -325,16 +279,10 @@ shift_command : SHIFT {
 
  
 //call [[Drive:][Path] FileName [BatchParameters]] [:label [arguments]]
-call_command : CALL filename {
-                print_symbol("call_command filename");
-             }
-             | CALL path{
+call_command :CALL path{
                 print_symbol("call_command path");
              }
-             | CALL absolute_path{
-                print_symbol("call_command absolute_path");
-             }
-             ;
+            ;
         
 set_command : SET {
                 print_symbol("set_command");
@@ -342,27 +290,19 @@ set_command : SET {
             | SET parameter_list {
                 print_symbol("set_command parameter_list");
             }
-            | SET ID ASSIGN_OP STRING {
+            | SET ID ASSIGN_OP string {
                 print_symbol("set_command id = string");
             }
-            | SET ID ASSIGN_OP ID {
-                print_symbol("set_command id = id");
-            }
-            | SET parameter_list ID ASSIGN_OP STRING{
+           | SET parameter_list ID ASSIGN_OP string{
                 print_symbol("set_command parameter_list id = string");
             }
-            | SET parameter_list ID ASSIGN_OP ID{
-                print_symbol("set_command parameter_list id = id");
-            }
-            ;
+           ;
 
 cd_command : CD 
            | CD path {
                print_symbol("cd_command path");
            }
-           | CD absolute_path {
-               print_symbol("cd_command absolut_path");
-           }
+           
            | CD DRIVE_ROOT {
                print_symbol("cd_command drive_root");
            }
@@ -383,14 +323,23 @@ filename : ID
          ;
 
 
-absolute_path : DRIVE_ROOT  BACKSLASH path
+absolute_path : DRIVE_ROOT BACKSLASH PATH_LINE
               ;
 
-path :  ID BACKSLASH 
-     | path  ID BACKSLASH
-     | path filename
-     ;
-     
+path : PATH_LINE
+     | absolute_path 
+     | filename		
+     ;   
+
+string : STRING 
+       | ID
+       ;
+drive_command : DRIVE_ROOT{
+               print_symbol("drive_command");
+           }
+
+	      ;
+	      
 
 %%
 
