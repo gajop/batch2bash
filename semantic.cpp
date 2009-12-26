@@ -111,8 +111,8 @@ block translate(command* parent, program* shared_program) {
     int label_counter = 0, jump_counter = 0;
     int line = -1;
     std::stack<previous> prev;
-    for (std::vector<block>::iterator i = child_blocks.begin(); i != child_blocks.end();
-            ++i) {
+    for (std::vector<block>::iterator i = child_blocks.begin(); 
+            i != child_blocks.end(); ++i) {
         line = i->comm->line;
         fprintf(stderr, "phase three-a\n");
         if (label_counter < labels.size() && line == labels[label_counter].line) {
@@ -120,32 +120,57 @@ block translate(command* parent, program* shared_program) {
             if (labels[label_counter].jumps.size() == 1 && !prev.empty() && 
                     prev.top().type == JUMP && jump_counter >= 1 &&
                     child_jumps[jump_counter - 1].size() == 1 &&
-                    labels[label_counter].jumps.back() == child_jumps[jump_counter - 1].front()) {
+                    labels[label_counter].jumps.back() ==
+                    child_jumps[jump_counter - 1].front()) {
                 // COND1 SIMPLE* LABEL1 -> COND1 IF!1 SIMPLE* FI!1
                 fprintf(stderr, "phase three-a1\n");
                 block new_block = generate_hidden_if(prev.top().pos, i);
+                child_blocks.insert(i + 1, new_block);
                 child_blocks.erase(prev.top().pos + 1, i++);
-                prev.top().pos = i; //HMM RECHECK THIS
-                labels.erase(labels.begin() + label_counter);
-                child_jumps.erase(child_jumps.begin() + jump_counter - 1);
+                std::vector<command*>::iterator begin, end;
+                for (std::vector<command*>::iterator j = parent->children.begin(); 
+                        j != parent->children.end(); ++j) {
+                    if (*j == prev.top().pos->comm) {
+                        begin = j;
+                    } else if (*j == i->comm) {
+                        end = j;
+                    }
+                }
+                parent->children.insert(end + 1, new_block.comm);
+                parent->children.erase(begin, end);
+                labels.erase(labels.begin() + label_counter--); 
+                child_jumps.erase(child_jumps.begin() + --jump_counter);
                 prev.pop();
             } else {
                 prev.push(previous(LABEL, i));
                 ++label_counter;
             }
-		} else if (jump_counter < child_jumps.size() && line == child_jumps[jump_counter].front().line) {
+		} else if (jump_counter < child_jumps.size() && 
+                line == child_jumps[jump_counter].front().line) {
             fprintf(stderr, "phase three-ab passed\n");
-            if (child_jumps[jump_counter].size() == 1 && !prev.empty() && 
+            if (child_jumps[jump_counter].size() == 1 && !prev.empty() &&              
                     prev.top().type == LABEL && label_counter >= 1 && 
                     labels[label_counter - 1].jumps.size() == 1 && 
-                    labels[label_counter - 1].jumps.back() == child_jumps[jump_counter].front()) {
+                    labels[label_counter - 1].jumps.back() ==
+                    child_jumps[jump_counter].front()) {
                 // LABEL1 SIMPLE* COND1 -> WHILE1 SIMPLE* COND1 DONE
                 fprintf(stderr, "phase three-ab2\n");
                 block new_block = generate_hidden_while(prev.top().pos, i);
-                child_blocks.erase(prev.top().pos + 1, ++i);
-                prev.top().pos = i; //CHECK THIS AS WELL
-                labels.erase(labels.begin() + label_counter - 1);
-                child_jumps.erase(child_jumps.begin() + jump_counter);
+                child_blocks.insert(i + 1, new_block);
+                child_blocks.erase(prev.top().pos + 1, i++);
+                std::vector<command*>::iterator begin, end;
+                for (std::vector<command*>::iterator j = parent->children.begin(); 
+                        j != parent->children.end(); ++j) {
+                    if (*j == prev.top().pos->comm) {
+                        begin = j;
+                    } else if (*j == i->comm) {
+                        end = j;
+                    }
+                }
+                parent->children.insert(end + 1, new_block.comm);
+                parent->children.erase(begin, end);
+                labels.erase(labels.begin() + --label_counter);
+                child_jumps.erase(child_jumps.begin() + jump_counter--);
                 prev.pop();
             } else {
                 prev.push(previous(JUMP, i));
@@ -163,7 +188,8 @@ block translate(command* parent, program* shared_program) {
     }
 */
     ret.child_blocks = child_blocks;
-	for (std::vector<std::vector<jump> >::iterator i = child_jumps.begin(); i != child_jumps.end(); ++i) {
+	for (std::vector<std::vector<jump> >::iterator i = child_jumps.begin();
+            i != child_jumps.end(); ++i) {
 		for (std::vector<jump>::iterator j = i->begin(); j != i->end(); ++j) {
 			ret.child_jumps.push_back(*j);
 		}
@@ -195,10 +221,12 @@ void program::index_jumps_labels() {
         
         if (!current->visited) {
             if (current->com->name == "label") {
-                labels.labels.push_back(label(current->com->args.get_argument(0).name,
+                labels.labels.push_back(
+                        label(current->com->args.get_argument(0).name,
                             current->com->line));
             } else if (current->com->name == "goto") {
-                jumps.jumps.push_back(jump(current->com->args.get_argument(0).name,
+                jumps.jumps.push_back(
+                        jump(current->com->args.get_argument(0).name,
                             current->com->line));
             }
         }
@@ -211,19 +239,22 @@ void program::index_jumps_labels() {
 }
 
 void program::connect_jumps() { 
-	for (std::vector<jump>::iterator i = jumps.jumps.begin(); i != jumps.jumps.end(); ++i) {
+	for (std::vector<jump>::iterator i = jumps.jumps.begin();
+            i != jumps.jumps.end(); ++i) {
 		labels.add_jump(*i);
     } 
     label_list unused = labels;
     // read the info file, all the documentation is there
-	for (std::vector<jump>::iterator i = jumps.jumps.begin(); i != jumps.jumps.end(); ++i) {
+	for (std::vector<jump>::iterator i = jumps.jumps.begin();
+            i != jumps.jumps.end(); ++i) {
 		if (unused.label_exists(i->label)) {
 			unused.remove_label(i->label);
         } else {
             throw std::logic_error("jump to an unknown label");
         }
     }
-	for (std::vector<label>::iterator i = unused.labels.begin(); i != unused.labels.end(); ++i) {
+	for (std::vector<label>::iterator i = unused.labels.begin();
+            i != unused.labels.end(); ++i) {
         labels.remove_label(i->name);
     }
 }
@@ -245,7 +276,8 @@ void program::generate_bash(int debug) {
 }
 
 bool label_list::label_exists(const std::string& name) const {
-    for (std::vector<label>::const_iterator i = labels.begin(); i != labels.end(); ++i) {
+    for (std::vector<label>::const_iterator i = labels.begin();
+            i != labels.end(); ++i) {
         if (i->name == name) {
             return true;
         }
@@ -254,7 +286,8 @@ bool label_list::label_exists(const std::string& name) const {
 }
 
 void label_list::add_label(const std::string& name, int line) {
-    for (std::vector<label>::iterator i = labels.begin(); i != labels.end(); ++i) {
+    for (std::vector<label>::iterator i = labels.begin();
+            i != labels.end(); ++i) {
         if (i->name == name) {
             throw std::logic_error("label already exists"); 
         }
@@ -269,7 +302,8 @@ unsigned label_list::num_labels() const {
 }
 
 void label_list::add_jump(const jump& jmp) {
-    std::vector<label>::iterator lab = find(labels.begin(), labels.end(), label(jmp.label, 42));
+    std::vector<label>::iterator lab = find(labels.begin(), labels.end(),
+            label(jmp.label, 42));
 	if (lab == labels.end()) {
         throw std::logic_error("label doesn't exists"); 
     } 
@@ -331,7 +365,8 @@ void program::print_program_tree() const {
             for (int i = 0; i < level; ++i) {
                 printf("\t");
             }
-            printf("%s%d\n", current->com->name.c_str(), current->com->children.size());
+            printf("%s%d\n", current->com->name.c_str(), 
+                    current->com->children.size());
         }
         if (current->visited < current->com->children.size()) {
             parents.push(tree_frame(current->com->children[current->visited++]));
