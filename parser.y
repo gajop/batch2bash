@@ -8,6 +8,7 @@
 #include "defs.h"
 #include <unistd.h>
 #include "semantic.h"
+#include "command.h"
 #include <stack>
 
 
