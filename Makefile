@@ -5,7 +5,7 @@ CFLAGS = -g
 
 .PHONY: clean
 
-batch2bash: lex.yy.c y.tab.c semantic.o command.o
+batch2bash: lex.yy.c y.tab.c semantic.o command.o codegen.o
 	$(CC) $(CFLAGS)  $+ -o $@
 
 y.tab.c: $(YACC_SRC)
@@ -20,8 +20,7 @@ lex.yy.c: $(LEX_SRC)
 clean:
 	rm -f lex.yy.c
 	rm -f batch2bash
-	rm -f semantic.o
-	rm -f command.o
+	rm -f *.o
 	rm -f y.output
 	rm -f y.tab.c
 	rm -f y.tab.h

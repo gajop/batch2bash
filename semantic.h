@@ -7,56 +7,27 @@
 #include <string>
 #include <set>
 
-struct jump { 
-    std::string label;
-    int line;
-    jump(const std::string& label, unsigned line) : label(label), line(line) {}
-    friend int operator <(const jump& lhs, const jump& rhs);
-    friend int operator ==(const jump& lhs, const jump& rhs);
-};
-
-class jump_list {
-public:
-    std::vector<jump> jumps;
-    unsigned num_jumps() const;
-    jump& get_jump(unsigned line);
-    const jump& get_jump(unsigned line) const;
-    void add_jump(std::string label, int line) const;
-    void remove_jump(unsigned line) const;
-};
-
-class label {
-public:
-    std::vector<jump> jumps;
-    std::string name;
-    int line;
-    label(const std::string& name, int line) : name(name), line(line) {}
-	friend int operator <(const label& lhs, const label& rhs);
-	friend int operator ==(const label& lhs, const label& rhs);
-    //command*
-};
-
-class label_list {
-public:
-	std::vector<label> labels;
-    unsigned num_labels() const;
-    const label& get_label(const std::string& name) const;
-    label& get_label(const std::string& name);
-    bool label_exists(const std::string& name) const; 
-    void add_label(const std::string& name, int line); //throws exception if label already exists
-    void add_jump(const jump& jmp);
-	void remove_label(const std::string& name);
-};
-
 class program {
     void index_jumps_labels();
     void connect_jumps();
-public:
-    label_list labels;
-    jump_list jumps;
+    void convert_goto();
+    void generate_code();
     command* root;
+public:
     program();
+    command* get_root();
+    /* generates the bash equivalent of the semantic tree
+     * a multi step process of code generation where steps are:
+     * 1. index all jumps and labels
+     * 2. connect the above mentioned jumps and labels
+     * 3. convert all jumps and labels into ifs/whiles and similar
+     * 4. generate bash file with a 1:1 match
+     * */
     void generate_bash(int debug = 0);
+    /* prints semantic tree
+     * prints the name of the commands of the semantic tree
+     * with the given indentation
+     * */
     void print_program_tree() const;
 };
 

@@ -186,7 +186,9 @@ compound_command : LPAREN {
 
 echo_command : ECHO {
                    print_symbol("echo_command"); 
-                   $$ = long(new command("echo", line));
+                   command* echo_command = new command("echo", line);
+                   echo_command->add_string((char *)($1));
+                   $$ = long(echo_command);
                }
              ;
 pause_command : PAUSE {
@@ -212,19 +214,23 @@ del_command : DEL path {
             ;
 dir_command : DIR {
                   print_symbol("dir_command");
-                  $$ = long(new command("dir", line));
+                  command* dir_command = new command("dir", line);
+                  $$ = long(dir_command);
               }
             | DIR option_list {
                   print_symbol("dir_command paramter_list");
-                  $$ = long(new command("dir", line));
+                  command* dir_command = new command("dir", line);
+                  $$ = long(dir_command);
               }
             | DIR path {
                   print_symbol("dir_command path");
-                  $$ = long(new command("dir", line));
+                  command* dir_command = new command("dir", line);
+                  $$ = long(dir_command);
               }
             | DIR option_list path {
                   print_symbol("dir_command option_list path");
-                  $$ = long(new command("dir", line));
+                  command* dir_command = new command("dir", line);
+                  $$ = long(dir_command);
               }
             ;
             
@@ -481,9 +487,8 @@ int main(int argc, char *argv[]) {
                 break;
         }
     }
-    command* begin = new command("root", -1);
+    command* begin = progrm.get_root();
     parents.push(begin);
-    progrm.root = begin;
     yyparse();
     if (!error) {
         if (debug != 0 && !error) {

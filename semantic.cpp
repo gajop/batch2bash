@@ -1,8 +1,53 @@
 #include "semantic.h"
+#include "codegen.h"
 #include <stdexcept>
 #include <algorithm>
 #include <stack>
 #include <set>
+
+struct jump { 
+    std::string label;
+    int line;
+    jump(const std::string& label, unsigned line) : label(label), line(line) {}
+    friend int operator <(const jump& lhs, const jump& rhs);
+    friend int operator ==(const jump& lhs, const jump& rhs);
+};
+
+class jump_list {
+public:
+    std::vector<jump> jumps;
+    unsigned num_jumps() const;
+    jump& get_jump(unsigned line);
+    const jump& get_jump(unsigned line) const;
+    void add_jump(std::string label, int line) const;
+    void remove_jump(unsigned line) const;
+};
+
+class label {
+public:
+    std::vector<jump> jumps;
+    std::string name;
+    int line;
+    label(const std::string& name, int line) : name(name), line(line) {}
+	friend int operator <(const label& lhs, const label& rhs);
+	friend int operator ==(const label& lhs, const label& rhs);
+    //command*
+};
+
+class label_list {
+public:
+	std::vector<label> labels;
+    unsigned num_labels() const;
+    const label& get_label(const std::string& name) const;
+    label& get_label(const std::string& name);
+    bool label_exists(const std::string& name) const; 
+    void add_label(const std::string& name, int line); //throws exception if label already exists
+    void add_jump(const jump& jmp);
+	void remove_label(const std::string& name);
+};
+
+label_list labels;
+jump_list jumps;
 
 enum block_type { bSIMPLE, bCOND, bLABEL, bHARD };
 
@@ -60,17 +105,17 @@ block generate_hidden_while(std::vector<block>::iterator begin,
     ret.type = bSIMPLE;
 }
 
-block translate(command* parent, program* shared_program) {
+block recursive_conv_goto(command* parent, program* shared_program) {
     block ret = block(parent);
     if (parent->get_num_children()) {
         fprintf(stderr, "phase one\n");
         if (parent->get_name() == "goto") { 
             ret.type = bCOND;
-            ret.jmplabel.jmp = &shared_program->jumps.get_jump(parent->get_line());
-            ret.child_jumps.push_back(&shared_program->jumps.get_jump(parent->get_line()));
+            ret.jmplabel.jmp = &jumps.get_jump(parent->get_line());
+            ret.child_jumps.push_back(&jumps.get_jump(parent->get_line()));
         } else if (parent->get_name() == "label") {
             ret.type = bLABEL;
-            ret.jmplabel.labl = &shared_program->labels.get_label(parent->get_name());
+            ret.jmplabel.labl = &labels.get_label(parent->get_name());
         } else {
             ret.type = bSIMPLE;
         }
@@ -81,7 +126,7 @@ block translate(command* parent, program* shared_program) {
     std::vector<label*> labels;
     std::vector<std::vector<jump*> > child_jumps; //recursively
     for (int i = 0; i < parent->get_num_children(); ++i) {
-        block result = translate(parent->get_child(i), shared_program);
+        block result = recursive_conv_goto(parent->get_child(i), shared_program);
         switch (result.type) {
             case bSIMPLE :
                 if (!child_blocks.empty() && child_blocks.back().type == bSIMPLE) {
@@ -256,6 +301,38 @@ void program::connect_jumps() {
     }
 }
 
+void program::convert_goto() {
+    block ret = recursive_conv_goto(root, this);
+    if (ret.type == bHARD) { 
+        fprintf(stderr, "not possible to convert goto");
+    }
+}
+
+void program::generate_code() {
+    std::stack<tree_frame> parents;
+    parents.push(tree_frame(root));
+    tree_frame* current;
+    int level = -1;
+    std::string generated_code;
+    while (!parents.empty()) {
+        current = &parents.top();
+        if (current->com->get_name() != "root") {
+            generated_code = translate(current->com, current->visited);
+            for (int i = 0; i < level; ++i) {
+                printf("\t");
+            }
+            printf("%s\n", generated_code.c_str());
+        }
+        if (current->visited < current->com->get_num_children()) {
+            parents.push(tree_frame(current->com->get_child(current->visited++)));
+            ++level;
+        } else {
+            parents.pop();
+            --level;
+        }
+    }
+}
+
 void program::generate_bash(int debug) {
     index_jumps_labels();
     connect_jumps();
@@ -269,8 +346,12 @@ void program::generate_bash(int debug) {
             }
         }
     }
-    block ret = translate(root, this);
-    print_program_tree();
+    convert_goto();
+//    print_program_tree();
+    if (debug != 0) {
+        printf("\ngenerated code:\n");
+    }
+    generate_code();
 }
 
 bool label_list::label_exists(const std::string& name) const {
@@ -345,7 +426,7 @@ int operator ==(const label& lhs, const label& rhs) {
 
 
 program::program() { 
-    root = NULL;
+    root = new command("root", -1);
 }
 
 void program::print_program_tree() const {
@@ -373,4 +454,6 @@ void program::print_program_tree() const {
     }
 }
 
-
+command* program::get_root() {
+    return root;
+}

@@ -1,0 +1,69 @@
+Goto statement is considered harmful... really it is
+therefor we need to add some terminology
+all gotos mentioned below are jumps on constant labels, thus all gotos that have variables are converted to a case statement which has multiple jumps, depending on all the possible variables
+simple block = no gotos or labels, easy to convert (all compound statements, if/for and other loops are terminated inside it)
+so f.e :
+for %%i in (*.txt) do ( 
+    type %%i
+    echo "bla"
+ )
+ is a simple block
+ this however isn't :
+ for %%i in (*.txt) do (
+     type %%i
+while this isn't, because for isn't terminated (then again, it's not even a command)
+simple block + simple block = simple block
+hidden loop is a block that contains only one label and the rest of the code contains only one goto statement corresponding to the label
+hidden loop also has only simple blocks in between
+hidden loop can be transformed to a if/while statement if the jump is above/below the code
+note that hidden loops happen outside of loops or both the goto statement and jump destination are inside the same loop
+f.e:
+for ... (
+    type %%i
+ :dest
+     echo "bla"
+     if something... (
+         goto dest
+     )
+ )
+ this isn't a hidden loop
+ for ... (
+     type %%i
+ :dest
+     echo "bla"
+ )
+ if something...(
+     goto dest
+ )
+ multi jump block is a block that contains multiple labels and/or goto statements that have simple or hidden blocks, and all of the jumps/labels when viewed separately would be hidden blocks
+ that is, no jump is inside a different loop or similar
+ f.e
+for ... (
+    type %%i
+ :dest
+     echo "bla"
+ :dest2
+     if something... (
+         goto dest
+     )
+     if something_else (
+         goto dest2
+     )
+ )
+multi jump block can be translated by adding an enclosing while loop, couple of variables and if statements
+the remaining type of jumps is one where jump destinations are to different loops, we call this hard jumps
+hard jumps can have multi jump blocks and weaker (hidden loops and simple blocks)
+f.e 
+ for ... (
+     type %%i
+ :dest
+     echo "bla"
+ )
+ if something...(
+     goto dest
+ )
+in the general case, these need to be resolved by a restructure of that part of the code, which can be non trivial
+and as such it's currently not implemented
+
+
+TODO: add special loops for simulated break/continue, maybe even return
