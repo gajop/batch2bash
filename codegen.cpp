@@ -63,36 +63,40 @@ std::string lookup_commands::get_trans(const std::string& orig) {
 // 3: need to be manually translated, on a per-argument basis
 // by default, if command isn't of type 3 (and has an explicit translation) a lookup table 
 // is checked to see if it's of type 2, otherwise it's assumed of type 1
-std::string translate(command* comm, int round) {
+std::string translate(command* comm, int round, std::vector<command*> prev, int& indent) {
     std::string name = comm->get_name();
     if (name == "if") {
         if (round == 0) {
+            ++indent;
             return add_args("if", comm);
         } else {
-            return "fi";
+            --indent;
+            if (prev[prev.size() - 2]->get_name() == "if_else") {
+                return "";
+            } else {
+                return "fi";
+            }
         }
     } else if (name == "else") {
         if (round == 0) {
+            ++indent;
             return "else";
         } else {
+            --indent;
             return "fi";
         }
     } else if (name == "if_else") {
         return "";
     } else if (name == "while") {
         if (round == 0) {
+            ++indent;
             return add_args("while", comm);
         } else {
+            --indent;
             return "done";
         }
     } else if (name == "compound") {
-        if (round == 0) {
-            return "("; //uhm lol no
-        } else if (round == comm->get_num_children()) {
-            return ")";
-        } else {
-            return "";
-        }
+        return ""; //hm
     }
     if (lookup.exists(name)) {
         return add_args(lookup.get_trans(name), comm);

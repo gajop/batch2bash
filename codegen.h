@@ -1,6 +1,7 @@
 #ifndef CODEGEN_H
 #define CODEGEN_H
 #include <string>
+#include <vector>
 #include "command.h"
 #include <map>
 
@@ -16,7 +17,7 @@
  * will have two rounds for if, one to generate the bash equivalent of if <something> at
  * round 0, and second to close up with the bash equivalent at round 1
  * */
-std::string translate(command* comm, int round);
+std::string translate(command* comm, int round, std::vector<command*> prev, int& index);
 class lookup_commands {
 public: 
     lookup_commands();

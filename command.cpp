@@ -25,7 +25,9 @@ int command::get_num_children() const {
 }
 
 void command::remove_children(int begin, int end) {
+    fprintf(stderr, "BEFORE %d\n", children.size());
     children.erase(children.begin() + begin, children.begin() + end);
+    fprintf(stderr, "AFTER %d\n", children.size());
 }
 
 void command::add_option(const std::string& value) {

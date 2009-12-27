@@ -119,16 +119,17 @@ block recursive_conv_goto(command* parent, program* shared_program) {
             ret.child_jumps.push_back(&jumps.get_jump(parent->get_line()));
             int line = parent->get_line();
             delete parent;
-            parent = new command("predicate here", line);
+            parent = new command("set predicate to true here", line);
             //need to create an assignment to a variable here instead of goto
         } else if (parent->get_name() == "label") {
+            ret.type = bLABEL;
             try {
                 ret.jmplabel.labl = &labels.get_label(parent->get_argument(0).value);
             } catch(std::logic_error& err) {
                 //assume label is unused, somewhat ugly to do it this way but oh well
                 ret.type = bIGNORE;
+                fprintf(stderr, "WELL HELLO TO YOU TOO");
             }
-            ret.type = bLABEL;
         } else {
             ret.type = bSIMPLE;
         }
@@ -161,7 +162,8 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                 fprintf(stderr, "label line : %d\n", result.jmplabel.labl->line);
                 break;
             case bIGNORE :
-                fprintf(stderr, "unused label\n");
+                parent->remove_children(i, i--);
+                fprintf(stderr, "unused label at\n");
                 break;
         }
     }
@@ -325,28 +327,32 @@ void program::convert_goto() {
 }
 
 void program::generate_code() {
-    std::stack<tree_frame> parents;
-    parents.push(tree_frame(root));
+    std::stack<tree_frame> traversal_stack; // meh double memory, but hey, just pointers...
+    std::vector<command*> parents; 
+    parents.push_back(root);
+    traversal_stack.push(tree_frame(root));
     tree_frame* current;
-    int level = -1;
+    int level = 0;
     std::string generated_code;
+    printf("#!/bin/bash\n");
     while (!parents.empty()) {
-        current = &parents.top();
+        current = &traversal_stack.top();
         if (current->com->get_name() != "root") {
-            generated_code = translate(current->com, current->visited);
+            int old_level = level;
+            generated_code = translate(current->com, current->visited, parents, level);
             if (generated_code != "") {
-                for (int i = 0; i < level; ++i) {
+                for (int i = 0; i < ((old_level < level)?old_level:level); ++i) {
                     printf("\t");
                 }
                 printf("%s\n", generated_code.c_str());
             } 
         }
         if (current->visited < current->com->get_num_children()) {
-            parents.push(tree_frame(current->com->get_child(current->visited++)));
-            ++level;
+            traversal_stack.push(tree_frame(current->com->get_child(current->visited++)));
+            parents.push_back(traversal_stack.top().com);
         } else {
-            parents.pop();
-            --level;
+            traversal_stack.pop();
+            parents.pop_back();
         }
     }
 }
