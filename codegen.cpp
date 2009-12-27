@@ -67,9 +67,31 @@ std::string translate(command* comm, int round) {
     std::string name = comm->get_name();
     if (name == "if") {
         if (round == 0) {
-            return "if";
-        } else if(round == 1) {
+            return add_args("if", comm);
+        } else {
             return "fi";
+        }
+    } else if (name == "else") {
+        if (round == 0) {
+            return "else";
+        } else {
+            return "fi";
+        }
+    } else if (name == "if_else") {
+        return "";
+    } else if (name == "while") {
+        if (round == 0) {
+            return add_args("while", comm);
+        } else {
+            return "done";
+        }
+    } else if (name == "compound") {
+        if (round == 0) {
+            return "("; //uhm lol no
+        } else if (round == comm->get_num_children()) {
+            return ")";
+        } else {
+            return "";
         }
     }
     if (lookup.exists(name)) {

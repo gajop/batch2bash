@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <stack>
 #include <set>
+#include "utility.hpp"
 
 struct jump { 
     std::string label;
@@ -17,8 +18,8 @@ class jump_list {
 public:
     std::vector<jump> jumps;
     unsigned num_jumps() const;
-    jump& get_jump(unsigned line);
-    const jump& get_jump(unsigned line) const;
+    jump& get_jump(int line);
+    const jump& get_jump(int line) const;
     void add_jump(std::string label, int line) const;
     void remove_jump(unsigned line) const;
 };
@@ -49,7 +50,7 @@ public:
 label_list labels;
 jump_list jumps;
 
-enum block_type { bSIMPLE, bCOND, bLABEL, bHARD };
+enum block_type { bSIMPLE, bCOND, bLABEL, bHARD, bIGNORE };
 
 struct block {
     std::vector<block> child_blocks;
@@ -82,48 +83,59 @@ struct previous {
 block generate_hidden_if(std::vector<block>::iterator begin,
         std::vector<block>::iterator end) {
     command* if_comm = new command("if", begin->comm->get_line());
+    if_comm->add_option("not predicate here");
     //ADD IF COMMAND PREDICATE HERE
     command* compound_comm = new command("compound", begin->comm->get_line());
     if_comm->add_child(compound_comm);
-    for (std::vector<block>::iterator i = begin; i != end; ++i) {
+    for (std::vector<block>::iterator i = begin + 1; i != end; ++i) {
         compound_comm->add_child(i->comm);
     }
     block ret(if_comm);
     ret.type = bSIMPLE;
+    return ret;
 }
 
 block generate_hidden_while(std::vector<block>::iterator begin,
         std::vector<block>::iterator end) {
     command* while_comm = new command("while", begin->comm->get_line());
     //ADD WHILE COMMAND PREDICATE HERE
+    while_comm->add_option("predicate here");
     command* compound_comm = new command("compound", begin->comm->get_line());
     while_comm->add_child(compound_comm);
-    for (std::vector<block>::iterator i = begin; i != end; ++i) {
+    for (std::vector<block>::iterator i = begin + 1; i != end + 1; ++i) {
         compound_comm->add_child(i->comm);
     }
     block ret(while_comm);
     ret.type = bSIMPLE;
+    return ret;
 }
 
 block recursive_conv_goto(command* parent, program* shared_program) {
     block ret = block(parent);
-    if (parent->get_num_children()) {
-        fprintf(stderr, "phase one\n");
+    if (!parent->get_num_children()) {
         if (parent->get_name() == "goto") { 
             ret.type = bCOND;
             ret.jmplabel.jmp = &jumps.get_jump(parent->get_line());
             ret.child_jumps.push_back(&jumps.get_jump(parent->get_line()));
+            int line = parent->get_line();
+            delete parent;
+            parent = new command("predicate here", line);
+            //need to create an assignment to a variable here instead of goto
         } else if (parent->get_name() == "label") {
+            try {
+                ret.jmplabel.labl = &labels.get_label(parent->get_argument(0).value);
+            } catch(std::logic_error& err) {
+                //assume label is unused, somewhat ugly to do it this way but oh well
+                ret.type = bIGNORE;
+            }
             ret.type = bLABEL;
-            ret.jmplabel.labl = &labels.get_label(parent->get_name());
         } else {
             ret.type = bSIMPLE;
         }
         return ret;
     }
-    fprintf(stderr, "phase two\n");
     std::vector<block> child_blocks;
-    std::vector<label*> labels;
+    std::vector<label*> child_labels;
     std::vector<std::vector<jump*> > child_jumps; //recursively
     for (int i = 0; i < parent->get_num_children(); ++i) {
         block result = recursive_conv_goto(parent->get_child(i), shared_program);
@@ -145,33 +157,31 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                 break;
             case bLABEL : // just one label, in no block
                 child_blocks.push_back(result);
-                labels.push_back(result.jmplabel.labl);
+                child_labels.push_back(result.jmplabel.labl);
+                fprintf(stderr, "label line : %d\n", result.jmplabel.labl->line);
+                break;
+            case bIGNORE :
+                fprintf(stderr, "unused label\n");
                 break;
         }
     }
 
-    fprintf(stderr, "phase three\n");
     // first find all hidden loops and convert them to simple blocks
-    if (child_jumps.size() && labels.size()) {
+    if (child_jumps.size() && child_labels.size()) {
     int label_counter = 0, jump_counter = 0;
     int line = -1;
     std::stack<previous> prev;
     for (std::vector<block>::iterator i = child_blocks.begin(); 
-            i != child_blocks.end(); ++i) {
+            i != child_blocks.end();) {
         line = i->comm->get_line();
-        fprintf(stderr, "phase three-a\n");
-        if (label_counter < labels.size() && line == labels[label_counter]->line) {
-            fprintf(stderr, "phase three-a passed\n");
-            if (labels[label_counter]->jumps.size() == 1 && !prev.empty() && 
+        if (label_counter < child_labels.size() &&
+                line == child_labels[label_counter]->line) {
+            if (child_labels[label_counter]->jumps.size() == 1 && !prev.empty() && 
                     prev.top().type == JUMP && jump_counter >= 1 &&
                     child_jumps[jump_counter - 1].size() == 1 &&
-                    labels[label_counter]->jumps.back() ==
+                    child_labels[label_counter]->jumps.back() ==
                     *child_jumps[jump_counter - 1].front()) {
                 // COND1 SIMPLE* LABEL1 -> COND1 IF!1 SIMPLE* FI!1
-                fprintf(stderr, "phase three-a1\n");
-                block new_block = generate_hidden_if(prev.top().pos, i);
-                child_blocks.insert(i + 1, new_block);
-                child_blocks.erase(prev.top().pos + 1, i++);
                 int begin, end;
                 for (int j = 0; j < parent->get_num_children(); ++j) {
                     if (parent->get_child(j) == prev.top().pos->comm) {
@@ -180,28 +190,27 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                         end = j;
                     }
                 }
-                parent->insert_child(end + 1, new_block.comm);
-                parent->remove_children(begin, end);
-                labels.erase(labels.begin() + label_counter--); 
+                block new_block = generate_hidden_if(prev.top().pos, i);
+                child_blocks.insert(i + 1, new_block);
+                child_blocks.erase(prev.top().pos + 1, i++);
+                parent->insert_child(begin + 1, new_block.comm);
+                parent->remove_children(begin + 2, end + 2);
+                child_labels.erase(child_labels.begin() + label_counter); 
                 child_jumps.erase(child_jumps.begin() + --jump_counter);
                 prev.pop();
+                continue;
             } else {
                 prev.push(previous(LABEL, i));
                 ++label_counter;
             }
 		} else if (jump_counter < child_jumps.size() && 
-                child_jumps[jump_counter].size() == 1) {
-            fprintf(stderr, "phase three-ab passed\n");
-            if (line == child_jumps[jump_counter].front()->line &&
-                    !prev.empty() && prev.top().type == LABEL && label_counter >= 1 && 
-                    labels[label_counter - 1]->jumps.size() == 1 && 
-                    labels[label_counter - 1]->jumps.back() ==
+                child_jumps[jump_counter].size() == 1 &&
+                line == child_jumps[jump_counter].front()->line) {
+            if (!prev.empty() && prev.top().type == LABEL && label_counter >= 1 && 
+                    child_labels[label_counter - 1]->jumps.size() == 1 && 
+                    child_labels[label_counter - 1]->jumps.back() ==
                     *child_jumps[jump_counter].front()) {
                 // LABEL1 SIMPLE* COND1 -> WHILE1 SIMPLE* COND1 DONE
-                fprintf(stderr, "phase three-ab2\n");
-                block new_block = generate_hidden_while(prev.top().pos, i);
-                child_blocks.insert(i + 1, new_block);
-                child_blocks.erase(prev.top().pos + 1, i++);
                 int begin, end;
                 for (int j = 0; j < parent->get_num_children(); ++j) {
                     if (parent->get_child(j) == prev.top().pos->comm) {
@@ -210,22 +219,30 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                         end = j;
                     }
                 }
-                parent->insert_child(end + 1, new_block.comm);
-                parent->remove_children(begin, end);
-                labels.erase(labels.begin() + --label_counter);
-                child_jumps.erase(child_jumps.begin() + jump_counter--);
+                block new_block = generate_hidden_while(prev.top().pos, i);
+                child_blocks.insert(i + 1, new_block);
+                child_blocks.erase(prev.top().pos + 1, i++);
+                command* comm = parent->get_child(begin);
+                int __line = comm->get_line();
+                delete comm;
+                comm = new command("set predicate to true here", line);
+                parent->insert_child(begin + 1, new_block.comm);
+                parent->remove_children(begin + 2, end + 2);
+                child_labels.erase(child_labels.begin() + --label_counter);
+                child_jumps.erase(child_jumps.begin() + jump_counter);
                 prev.pop();
+                continue;
             } else {
                 prev.push(previous(JUMP, i));
                 ++jump_counter;
             }
         }
+        ++i;
     }
     }
-    fprintf(stderr, "phase four\n");
 /* 
  *  LEAVING MULTIJUMPS FOR LATER... first test this
-    // now if there are any remaining labels and corresponding jumps enclose it all in a big while loop and put ifs inside
+    // now if there are any remaining child_labels and corresponding jumps enclose it all in a big while loop and put ifs inside
     for (int i = 0; i < child_blocks.size(); ++i) {
 
     }
@@ -237,7 +254,7 @@ block recursive_conv_goto(command* parent, program* shared_program) {
 			ret.child_jumps.push_back(*j);
 		}
 	}
-    if (labels.size() > 0) { // there are some labels in this block to which no jump has been performed to
+    if (child_labels.size() > 0) { // there are some child_labels in this block to which no jump has been performed to
         ret.type = bHARD;
     } else if (child_jumps.size() > 0) {
         ret.type = bCOND;
@@ -263,9 +280,8 @@ void program::index_jumps_labels() {
         current = &parents.top();
         if (!current->visited) {
             if (current->com->get_name() == "label") {
-                labels.labels.push_back(
-                        label(current->com->get_argument(0).value,
-                            current->com->get_line()));
+                labels.add_label(current->com->get_argument(0).value,
+                            current->com->get_line());
             } else if (current->com->get_name() == "goto") {
                 jumps.jumps.push_back(
                         jump(current->com->get_argument(0).value,
@@ -318,10 +334,12 @@ void program::generate_code() {
         current = &parents.top();
         if (current->com->get_name() != "root") {
             generated_code = translate(current->com, current->visited);
-            for (int i = 0; i < level; ++i) {
-                printf("\t");
-            }
-            printf("%s\n", generated_code.c_str());
+            if (generated_code != "") {
+                for (int i = 0; i < level; ++i) {
+                    printf("\t");
+                }
+                printf("%s\n", generated_code.c_str());
+            } 
         }
         if (current->visited < current->com->get_num_children()) {
             parents.push(tree_frame(current->com->get_child(current->visited++)));
@@ -347,7 +365,7 @@ void program::generate_bash(int debug) {
         }
     }
     convert_goto();
-//    print_program_tree();
+    print_program_tree();
     if (debug != 0) {
         printf("\ngenerated code:\n");
     }
@@ -392,20 +410,42 @@ void label_list::add_jump(const jump& jmp) {
 }
 
 const label& label_list::get_label(const std::string& name) const {
-    return *(find(labels.begin(), labels.end(), label(name, 42)));
+    for (int i = 0; i < labels.size(); ++i) {
+        if (labels[i].name == name) {
+            return labels[i];
+        }
+    }
+    throw std::logic_error("label doesn't exist: " + name);
+    //return *(find(labels.begin(), labels.end(), label(name, 42)));
 }
 
 label& label_list::get_label(const std::string& name) {
-    return *(find(labels.begin(), labels.end(), label(name, 42)));
+    for (int i = 0; i < labels.size(); ++i) {
+        if (labels[i].name == name) {
+            return labels[i];
+        }
+    }
+    throw std::logic_error("label doesn't exist: " + name);
+    //return *(find(labels.begin(), labels.end(), label(name, 42)));
 }
 
 
-const jump& jump_list::get_jump(unsigned line) const {
-    return *(find(jumps.begin(), jumps.end(), jump(std::string("42"), line)));
+const jump& jump_list::get_jump(int line) const {
+    for (int i = 0; i < jumps.size(); ++i) {
+        if (jumps[i].line == line) {
+            return jumps[i];
+        }
+    }
+    throw std::logic_error("jump doesn't exist on line: " + toString(line));
 }
 
-jump& jump_list::get_jump(unsigned line) {
-    return *(find(jumps.begin(), jumps.end(), jump(std::string("42"), line)));
+jump& jump_list::get_jump(int line) {
+    for (int i = 0; i < jumps.size(); ++i) {
+        if (jumps[i].line == line) {
+            return jumps[i];
+        }
+    }
+    throw std::logic_error("jump doesn't exist on line: " + toString(line));
 }
 
 int operator <(const jump& lhs, const jump& rhs) {
