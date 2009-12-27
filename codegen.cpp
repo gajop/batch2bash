@@ -49,6 +49,9 @@ bool lookup_commands::exists(const std::string& orig) {
     return comms.count(orig);
 }
 
+lookup_commands lookup;
+
+
 //use it wisely, preferably after having done lookup_commands::exists
 std::string lookup_commands::get_trans(const std::string& orig) {
     return comms[orig];

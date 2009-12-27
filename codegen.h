@@ -26,6 +26,4 @@ private:
     std::map<std::string, std::string> comms;
 };
 
-lookup_commands lookup;
-
 #endif
