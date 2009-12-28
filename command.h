@@ -22,6 +22,7 @@ public:
     void remove_children(int begin, int end);
 
     void add_option(const std::string& value);
+    void add_options(const std::vector<std::string>& input_vector);
     void add_string(const std::string& value);
     argument get_argument(int index) const;
     int get_num_args() const;

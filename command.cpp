@@ -34,6 +34,12 @@ void command::add_option(const std::string& value) {
     args.push_back(argument(value, aOPT));
 }
 
+void command::add_options(const std::vector<std::string>& input_vector) {
+    for (int i = 0; i < input_vector.size(); ++i) {
+        args.push_back(argument(input_vector[i], aSTRING));
+    }
+}
+
 void command::add_string(const std::string& value) {
     args.push_back(argument(value, aSTRING));
 }

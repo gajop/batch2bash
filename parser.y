@@ -10,6 +10,8 @@
 #include "semantic.h"
 #include "command.h"
 #include <stack>
+#include <string>
+#include <vector>
 
 
 int yyparse(void);
@@ -21,6 +23,7 @@ program progrm;
 extern int line;
 extern int debug;
 extern int error;
+std::vector<std::string> option_list;
 
 %}
 
@@ -274,7 +277,9 @@ choice_command : CHOICE {/*default Y/N choice */
                  }
                | CHOICE option_list {
                      print_symbol("choce_command option_list");
-                     $$ = long(new command("choice", line));
+                     command* choice_command = new command("choice", line);
+                     choice_command->add_options(option_list);
+                     $$ = long(choice_command);
                  }
                ;
                 
@@ -450,8 +455,13 @@ variable : PERCENT ID PERCENT {
            }
          ;
 
-option_list : OPTION
-            | option_list OPTION
+option_list : OPTION { 
+                  option_list.clear(); 
+                  option_list.push_back((char *)($1)); 
+              }
+            | option_list OPTION {
+                  option_list.push_back((char *)($2));  
+              }
             ; 
 
 filename : ID 
