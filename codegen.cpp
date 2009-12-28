@@ -36,11 +36,12 @@ TYPE	cat	output file to stdout
 XCOPY	cp	(extended) file copy */
 lookup_commands::lookup_commands() {
     std::string orig[] = { "assign", "attrib", "chdir", "cls", "comp", "copy", "del",
-        "erase", "fc", "find", "md", "move", "rd", "time", "type", "xcopy" };
+        "erase", "fc", "find", "md", "move", "rd", "time", "type", "xcopy","rem" };
+
     std::string trans[] = { "ln", "attrib", "cd", "clear", "diff", "cp", "rm",
-        "rm", "comm", "grep", "mkdir", "mv", "rmdir", "date", "cat", "cp" };
-    int num = 16;
-    for (int i = 0; i < 16; ++i) {
+        "rm", "comm", "grep", "mkdir", "mv", "rmdir", "date", "cat", "cp" ,"#"};
+    int num = 17;
+    for (int i = 0; i < num; ++i) {
         comms[orig[i]] = trans[i];
     }
 }
@@ -95,6 +96,9 @@ std::string translate(command* comm, int round, std::vector<command*> prev, int&
             --indent;
             return "done";
         }
+    }
+    else if (name == "pause"){
+    	return "echo \"Press enter to continue\"\nread ";
     } else if (name == "compound") {
         return ""; //hm
     }

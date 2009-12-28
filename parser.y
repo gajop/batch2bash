@@ -18,6 +18,7 @@ int yyparse(void);
 int yylex(void);
 int yyerror(char *s);    
 void print_symbol(const char *string);
+void convert_path(char *string);
 std::stack<command*> parents;
 program progrm;
 extern int line;
@@ -165,8 +166,17 @@ normal_command : compound_command { $$ = $1; }
                ;
 
 
+//not sure this is ok but werkz for now
 redir_command : command REDIRECT path {
 	                print_symbol("redirect command");
+			char redir[256];
+			switch($2){
+				case W: snprintf(redir,256,"> %s",(char *)$3); break;
+				case A: snprintf(redir,256,">> %s",(char *)$3); break;
+				case R:  snprintf(redir,256,"< %s",(char *)$3); break;
+				}
+		((command *)$1)->add_string(redir);
+			$$ = $1;
 	            }
 	          ;
 
@@ -189,8 +199,10 @@ compound_command : LPAREN {
 
 echo_command : ECHO {
                    print_symbol("echo_command"); 
+		   char echo[256];
+	           snprintf(echo,255,"\"%s\"",$1);
                    command* echo_command = new command("echo", line);
-                   echo_command->add_string((char *)($1));
+                   echo_command->add_string(echo);
                    $$ = long(echo_command);
                }
              ;
@@ -202,13 +214,17 @@ pause_command : PAUSE {
     
 rem_command : REM {
                   print_symbol("rem_command");      
-                  $$ = long(new command("rem", line));
+		  command *rem_command = new command("rem",line);
+		  rem_command->add_string((char *)$1);
+                  $$ = long(rem_command);
               }
             ;
 
 del_command : DEL path {
                   print_symbol("del_command");
-                  $$ = long(new command("del", line));
+		  command *del_command = new command("del", line);
+		  del_command->add_string((char *)$2);
+                  $$ = long(del_command);
               }
             | DEL option_list  path {
                    print_symbol("del_commandi option_list");
@@ -228,6 +244,7 @@ dir_command : DIR {
             | DIR path {
                   print_symbol("dir_command path");
                   command* dir_command = new command("dir", line);
+		  dir_command->add_string((char *)$2);
                   $$ = long(dir_command);
               }
             | DIR option_list path {
@@ -245,17 +262,25 @@ exit_command : EXIT {
      
 find_command : FIND string path {
                    print_symbol("find_command path");
-                   $$ = long(new command("find", line));
+		   command *find_command = new command("find",line);
+		   find_command->add_string((char *)$2);
+		   find_command->add_string((char *)$3);
+                   $$ = long(find_command);
                }
              | FIND option_list string path {
                    print_symbol("find_command option_list path");
-                   $$ = long(new command("find", line));
+        	   command *find_command = new command("find",line);
+		   find_command->add_string((char *)$2);
+		   find_command->add_string((char *)$3);
+                   $$ = long(find_command);
                }
              ;
              
 mkdir_command : MKDIR path {
                    print_symbol("mkdir_command path");
-                   $$ = long(new command("mkdir", line));
+               	   command *mkdir_command = new command("mkdir", line);
+	           mkdir_command->add_string((char *)$2);
+		    $$ = long(mkdir_command);
                 }
               ; 
              
@@ -394,15 +419,23 @@ cd_command : CD {
              }
            | CD path {
                  print_symbol("cd_command path");
-                 $$ = long(new command("cd", line));
+		 command *cd_command = new command("cd",line);
+		 cd_command->add_string((char *)$2);
+                 $$ = long(cd_command);
              }
     	   | CD DRIVE_ROOT BACKSLASH { //exception , doesn't do anything 
                  print_symbol("cd_command drive_root\\");
-                 $$ = long(new command("cd", line));
+		 command *cd_command = new command("cd",line);
+		 char drv[256]; 
+		 snprintf(drv,255,"%s/",(char *)$2);
+		 cd_command->add_string(drv);
+                 $$ = long(cd_command);
              }
            | CD DRIVE_ROOT {
                  print_symbol("cd_command drive_root");
-                 $$ = long(new command("cd", line));
+		 command *cd_command = new command("cd", line);
+		 cd_command->add_string((char *)$2);
+                 $$ = long(cd_command);
              }
            ;
 
@@ -458,25 +491,43 @@ variable : PERCENT ID PERCENT {
 option_list : OPTION { 
                   option_list.clear(); 
                   option_list.push_back((char *)($1)); 
-              }
+		}
             | option_list OPTION {
                   option_list.push_back((char *)($2));  
               }
             ; 
 
-filename : ID 
-         | ID DOT ID
+filename : ID {
+	   $$ = $1;
+	 }
+         | ID DOT ID {
+	   sprintf((char *)$$,"%s.%s",(char *)$1,(char *)$3);
+	 }
          ;
 
 
-path : PATH_LINE
-     | DRIVE_ROOT BACKSLASH PATH_LINE
-     | DRIVE_ROOT BACKSLASH filename 
-     | filename		
+path : PATH_LINE {
+     	convert_path((char *)$1);
+     	$$ = $1;
+     }
+     | DRIVE_ROOT BACKSLASH PATH_LINE {
+	convert_path((char *)$3);
+	sprintf((char *)$$,"%s/%s",(char *)$1,(char *)$3);
+     }
+     | DRIVE_ROOT BACKSLASH filename {
+	sprintf((char *)$$,"%s/%s",(char *)$1,(char *)$3);
+     }
+     | filename	{
+	$$ = $1;
+     }
      ;   
 
-string : STRING 
-       | ID
+string : STRING {
+       	$$ = $1;
+       } 
+       | ID {
+	$$ = $1;
+       }
        ;
 	      
 
@@ -515,3 +566,11 @@ void print_symbol(const char *string) {
         fprintf(stdout, "\t%s %d\n", string,line);
     }
 }
+
+void convert_path(char *path) {
+	int i;
+	for(i = 0; path[i] != '\0';i++) {
+	     if(path[i] == '\\') path[i] = '/';
+	}
+}
+

@@ -1,7 +1,7 @@
 LEX_SRC = scanner.l
 YACC_SRC = parser.y
 CC = g++
-CFLAGS = -g
+CFLAGS = -g 
 
 .PHONY: clean
 
