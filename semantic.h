@@ -3,6 +3,7 @@
 #include <map>
 #include "command.h"
 #include <list>
+#include <cstdio>
 #include <vector>
 #include <string>
 #include <set>
