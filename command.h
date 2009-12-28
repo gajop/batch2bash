@@ -2,7 +2,7 @@
 #define COMMAND_H
 #include <string>
 #include <vector>
-#include <cstdio>
+#include <stdio.h>
 
 enum argument_type { aOPT, aSTRING };
 
