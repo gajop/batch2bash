@@ -98,7 +98,7 @@ std::string translate(command* comm, int round, std::vector<command*> prev, int&
         }
     }
     else if (name == "pause"){
-    	return "echo \"Press enter to continue\"\nread ";
+        return "echo \"Press enter to continue\"\nread ";
     } else if (name == "compound") {
         return ""; //hm
     }

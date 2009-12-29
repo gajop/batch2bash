@@ -8,8 +8,13 @@
 
 struct jump { 
     std::string label;
+    std::string var_name;
+    bool var_set; 
+    command* predicate_command; //faster changing
     int line;
-    jump(const std::string& label, unsigned line) : label(label), line(line) {}
+    jump(const std::string& label, unsigned line) : label(label), line(line) { 
+        var_set = false;
+    }
     friend int operator <(const jump& lhs, const jump& rhs);
     friend int operator ==(const jump& lhs, const jump& rhs);
 };
@@ -81,9 +86,10 @@ struct previous {
 };
 
 block generate_hidden_if(std::vector<block>::iterator begin,
-        std::vector<block>::iterator end) {
+        std::vector<block>::iterator end, const std::string& predicate) {
     command* if_comm = new command("if", begin->comm->get_line());
-    if_comm->add_option("not predicate here");
+    if_comm->add_option("not");
+    if_comm->add_string(predicate);
     //ADD IF COMMAND PREDICATE HERE
     command* compound_comm = new command("compound", begin->comm->get_line());
     if_comm->add_child(compound_comm);
@@ -96,10 +102,10 @@ block generate_hidden_if(std::vector<block>::iterator begin,
 }
 
 block generate_hidden_while(std::vector<block>::iterator begin,
-        std::vector<block>::iterator end) {
+        std::vector<block>::iterator end, const std::string& predicate) {
     command* while_comm = new command("while", begin->comm->get_line());
     //ADD WHILE COMMAND PREDICATE HERE
-    while_comm->add_option("predicate here");
+    while_comm->add_string(predicate);
     command* compound_comm = new command("compound", begin->comm->get_line());
     while_comm->add_child(compound_comm);
     for (std::vector<block>::iterator i = begin + 1; i != end + 1; ++i) {
@@ -119,7 +125,14 @@ block recursive_conv_goto(command* parent, program* shared_program) {
             ret.child_jumps.push_back(&jumps.get_jump(parent->get_line()));
             int line = parent->get_line();
             delete parent;
-            parent = new command("set predicate to true here", line);
+            parent = new command("set", line);
+            ret.comm = parent;
+            ret.jmplabel.jmp->var_name = shared_program->new_var();
+            parent->add_string(ret.jmplabel.jmp->var_name); //check if this is okay
+            parent->add_string("=");
+            parent->add_string("1");
+            ret.jmplabel.jmp->var_set = true;
+            ret.jmplabel.jmp->predicate_command = parent;
             //need to create an assignment to a variable here instead of goto
         } else if (parent->get_name() == "label") {
             ret.type = bLABEL;
@@ -128,7 +141,6 @@ block recursive_conv_goto(command* parent, program* shared_program) {
             } catch(std::logic_error& err) {
                 //assume label is unused, somewhat ugly to do it this way but oh well
                 ret.type = bIGNORE;
-                fprintf(stderr, "WELL HELLO TO YOU TOO");
             }
         } else {
             ret.type = bSIMPLE;
@@ -192,7 +204,8 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                         end = j;
                     }
                 }
-                block new_block = generate_hidden_if(prev.top().pos, i);
+                block new_block = generate_hidden_if(prev.top().pos, i, 
+                        child_jumps[jump_counter -1].front()->var_name);
                 child_blocks.insert(i + 1, new_block);
                 child_blocks.erase(prev.top().pos + 1, i++);
                 parent->insert_child(begin + 1, new_block.comm);
@@ -221,13 +234,17 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                         end = j;
                     }
                 }
-                block new_block = generate_hidden_while(prev.top().pos, i);
+                block new_block = generate_hidden_while(prev.top().pos, i,
+                       child_jumps[jump_counter].front()->var_name);
                 child_blocks.insert(i + 1, new_block);
                 child_blocks.erase(prev.top().pos + 1, i++);
                 command* comm = parent->get_child(begin);
                 int __line = comm->get_line();
                 delete comm;
-                comm = new command("set predicate to true here", line);
+                comm = new command("set", line);
+                comm->add_string(child_jumps[jump_counter].front()->var_name); //check this
+                comm->add_string("=");
+                comm->add_string("1");
                 parent->insert_child(begin + 1, new_block.comm);
                 parent->remove_children(begin + 2, end + 2);
                 child_labels.erase(child_labels.begin() + --label_counter);
@@ -242,6 +259,25 @@ block recursive_conv_goto(command* parent, program* shared_program) {
         ++i;
     }
     }
+    // check if any of the remaining labels have jumps that aren't any of the child jumps
+    for (int i = 0; i < child_labels.size(); ++i) {
+        // so slow :<
+        int counter = 0;
+        for (int j = 0; j < child_jumps.size(); ++j) {
+            for (int k = 0; k < child_jumps[j].size(); ++k) {
+                if (child_jumps[j][k]->label == child_labels[i]->name) {
+                    ++counter;
+                }
+            }
+        }
+        if (counter < child_labels.size()) { //there are jumps that aren't happening here
+            ret.type = bHARD;
+            fprintf(stderr, "you are doing it wrong! or i'm parsing it wrong\n");
+            return ret; // scream 
+        }
+    }
+    // if here life is good
+   
 /* 
  *  LEAVING MULTIJUMPS FOR LATER... first test this
     // now if there are any remaining child_labels and corresponding jumps enclose it all in a big while loop and put ifs inside
@@ -321,6 +357,7 @@ void program::connect_jumps() {
 
 void program::convert_goto() {
     block ret = recursive_conv_goto(root, this);
+    print_vars();
     if (ret.type == bHARD) { 
         fprintf(stderr, "not possible to convert goto");
     }
@@ -471,7 +508,7 @@ int operator ==(const label& lhs, const label& rhs) {
 }
 
 
-program::program() { 
+program::program() : __last_index(0) { 
     root = new command("root", -1);
 }
 
@@ -502,4 +539,75 @@ void program::print_program_tree() const {
 
 command* program::get_root() {
     return root;
+}
+
+
+bool variables::exists(const std::string& input) const {
+    for (int i = 0; i < vars.size(); ++i) {
+        if (vars[i] == input) {
+            return true;
+        }
+    }
+    return false;
+}
+void variables::add(const std::string& input) {
+    if (!exists(input)) {
+        vars.push_back(input);
+    } else {
+        throw std::logic_error("variable already exists " + input );
+    }
+}
+void variables::rem(const std::string& input) {
+    for (int i = 0; i < vars.size(); ++i) {
+        if (vars[i] == input) {
+            vars.erase(vars.begin() + i);
+            return;
+        }
+    }
+    throw std::logic_error("variable doesn't exists " + input);
+}
+std::string variables::operator [](int index) const {
+    if (num_vars() > index) {
+        return vars[index];
+    } else {
+        throw std::logic_error("not that many variables " + toString(index) );
+    }
+}
+int variables::num_vars() const {
+    return vars.size();
+}
+
+bool program::var_exists(const std::string& input) const {
+    return vars.exists(input);
+}
+
+void program::var_add(const std::string& input) {
+    vars.add(input);
+}
+void program::var_rem(const std::string& input) {
+    vars.rem(input);
+}
+std::string program::var_at(int index) const {
+    return vars[index];
+}
+int program::num_vars() const {
+    return vars.num_vars();
+}
+std::string program::new_var() {
+    long i = __last_index;
+    bool generated = false;
+    while (!generated) {
+        if (!var_exists("P_" + toString(i))) {
+            var_add("P_" + toString(i));
+            __last_index = i;
+            generated = true;
+        }
+        ++i;
+    }
+    return var_at(num_vars() - 1);
+}
+void program::print_vars() const {
+    for (int i = 0; i < num_vars(); ++i) {
+        printf("%s\n", var_at(i).c_str());
+    }
 }
