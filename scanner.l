@@ -102,6 +102,7 @@ xcopy                   { if (DEBUG) print_token("XCOPY\n"); return XCOPY; }
 {letter}({letter}|{digit})*         { yylval = (long)strdup(yytext); if (DEBUG) print_token("ID\n"); return ID; }
 {digit}+                            { if (DEBUG) print_token("NUMBER\n"); return NUMBER; }
 ":"                                 { if (DEBUG) print_token("COLON\n"); return COLON; }
+";"                                 { if (DEBUG) print_token("SEMICOLON\n"); return SEMICOLON; }
 "/"                                 { if (DEBUG) print_token("SLASH\n"); return SLASH; }
 "\\"                                { if (DEBUG) print_token("BACKSLASH\n"); return BACKSLASH; }
 [[:blank:]]+                        { }

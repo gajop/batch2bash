@@ -17,3 +17,6 @@ find "is this working" ao.txt
 del asd.txt
 rem translating pause as echo && read 
 pause
+path aasd\asd\asd\
+path
+path ;

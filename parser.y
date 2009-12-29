@@ -70,11 +70,11 @@ std::vector<std::string> option_list;
 %token PATH_LINE
 
 /* ms-dos command tokens */
-%token ASSIGN
-%token ATTRIB
+%token ASSIGN 
+%token ATTRIB //makes no sence translating it 
 %token CD
 %token CLS
-%token COMP
+%token COMP // binary diff ? 
 %token COPY
 %token DEL
 %token DELTR
@@ -99,6 +99,7 @@ std::vector<std::string> option_list;
 
 %token BACKSLASH
 %token COLON
+%token SEMICOLON
 %token NUMBER
 %token NEWLINE
 %token ID
@@ -150,6 +151,7 @@ normal_command : compound_command { $$ = $1; }
                | shift_command { $$ = $1; }
                | label { $$ = $1; }
                | del_command { $$ = $1; }
+               | deltree_command { $$ = $1; }
                | call_command { $$ = $1; }
                | set_command { $$ = $1; }
                | cd_command { $$ = $1; }
@@ -159,10 +161,13 @@ normal_command : compound_command { $$ = $1; }
                | find_command { $$ = $1; }
                | mkdir_command { $$ = $1; }
                | more_command { $$ = $1; }
+               | move_command { $$ = $1; }
                | drive_command { $$ = $1; }
+               | path_command { $$ = $1; }
                | fc_command { $$ = $1; }
                | date_command { $$ = $1; }
                | time_command { $$ = $1; }
+               | copy_command { $$ = $1; }
                ;
 
 
@@ -204,21 +209,57 @@ echo_command : ECHO {
                    command* echo_command = new command("echo", line);
                    echo_command->add_string(echo);
                    $$ = long(echo_command);
-               }
+                }
              ;
 pause_command : PAUSE {
                     print_symbol("pause_command"); 
                     $$ = long(new command("pause", line));
                 }
               ;
+
+path_command : PATH {
+                    print_symbol("path_command");
+                    $$ = long(new command("echo $PATH",line));
+                }
+             | PATH SEMICOLON {
+                    print_symbol("path_command semicolon");
+                    $$ = long(new command("unset PATH",line));
+                }
+             | PATH path {
+                    print_symbol("path_command path");
+                    command* path_command = new command("path", line);
+                    char env[256];
+                    snprintf(env,255,"PATH=\"%s\"",(char *)$2);
+                    path_command->add_string(env);
+                    $$ = long(path_command);
+                }
+             ;
     
 rem_command : REM {
                   print_symbol("rem_command");      
                   command* rem_command = new command("rem",line);
                   rem_command->add_string((char *)$1);
                   $$ = long(rem_command);
-              }
+                }
             ;
+//not fully done , comlications with options 
+copy_command : COPY path path {
+                  print_symbol("copy_command");
+                  command* copy_command = new command("copy", line);
+                  copy_command->add_string((char *)$2);
+                  copy_command->add_string((char *)$3);
+                  $$ = long(copy_command);
+               }
+             | COPY option_list path path {
+                  print_symbol("copy_command options_list");
+                  command* copy_command = new command("copy", line);
+                  copy_command->add_string((char *)$3);
+                  copy_command->add_string((char *)$4);
+                  copy_command->add_options(option_list);
+                  $$ = long(copy_command);
+                    
+               }
+             ;
 
 del_command : DEL path {
                   print_symbol("del_command");
@@ -231,6 +272,22 @@ del_command : DEL path {
                    $$ = long(new command("del", line));
               }
             ;
+
+deltree_command : DELTR path {
+                      print_symbol("deltree_command path");
+                      command* deltree_command = new command("deltree", line);
+                      deltree_command->add_string((char *)$2);
+                      $$ = long(deltree_command);
+                  }
+                | DELTR option_list path {
+                      print_symbol("deltree_command options path");
+                      command* deltree_command = new command("deltree", line);
+                      deltree_command->add_options(option_list);
+                      deltree_command->add_string((char *)$3);
+                      $$ = long(deltree_command);
+                  }
+                ;
+
 dir_command : DIR {
                   print_symbol("dir_command");
                   command* dir_command = new command("dir", line);
@@ -293,6 +350,24 @@ more_command : MORE filename {
                    $$ = long(new command("more", line));
                }
              ;
+
+move_command : MOVE path path {
+                   print_symbol("move_command path path");
+                   command* move_command = new command("move",line);
+                   move_command->add_string((char *)$2);
+                   move_command->add_string((char *)$3);
+                   $$ = long(move_command);
+               }
+             | MOVE option_list path path {
+                   print_symbol("move_command path path");
+                   command* move_command = new command("move",line);
+                   move_command->add_string((char *)$3);
+                   move_command->add_string((char *)$4);
+                   move_command->add_options(option_list);
+                   $$ = long(move_command);
+               }
+             ;
+    
 //choice [/c [<Choice1><Choice2><…>]] [/n] [/cs] [/t <Timeout> /d <Choice>] [/m <"Text">]
 // reference http://technet.microsoft.com/en-us/library/cc732504%28WS.10%29.aspx 
 
