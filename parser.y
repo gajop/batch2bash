@@ -126,7 +126,7 @@ command_list : command {
                    parents.top()->add_child((command*)($3));
                    $$ = long(parents.top());
                }
-	         | command_list NEWLINE redir_command {
+             | command_list NEWLINE redir_command {
                    parents.top()->add_child((command*)($3));
                    $$ = long(parents.top());
                }
@@ -168,17 +168,17 @@ normal_command : compound_command { $$ = $1; }
 
 //not sure this is ok but werkz for now
 redir_command : command REDIRECT path {
-	                print_symbol("redirect command");
-			char redir[256];
-			switch($2){
-				case W: snprintf(redir,256,"> %s",(char *)$3); break;
-				case A: snprintf(redir,256,">> %s",(char *)$3); break;
-				case R:  snprintf(redir,256,"< %s",(char *)$3); break;
-				}
-		((command *)$1)->add_string(redir);
-			$$ = $1;
-	            }
-	          ;
+                    print_symbol("redirect command");
+                    char redir[256];
+                    switch($2) {
+                        case W: snprintf(redir,256,"> %s",(char *)$3); break;
+                        case A: snprintf(redir,256,">> %s",(char *)$3); break;
+                        case R: snprintf(redir,256,"< %s",(char *)$3); break;
+                    }
+                    ((command *)$1)->add_string(redir);
+                    $$ = $1;
+                }
+              ;
 
 newline_list : command_list { $$ = $1; }
              | NEWLINE command_list { $$ = $2; }
@@ -199,8 +199,8 @@ compound_command : LPAREN {
 
 echo_command : ECHO {
                    print_symbol("echo_command"); 
-		   char echo[256];
-	           snprintf(echo,255,"\"%s\"",$1);
+                   char echo[256];
+                   snprintf(echo,255,"\"%s\"",$1);
                    command* echo_command = new command("echo", line);
                    echo_command->add_string(echo);
                    $$ = long(echo_command);
@@ -214,16 +214,16 @@ pause_command : PAUSE {
     
 rem_command : REM {
                   print_symbol("rem_command");      
-		  command *rem_command = new command("rem",line);
-		  rem_command->add_string((char *)$1);
+                  command* rem_command = new command("rem",line);
+                  rem_command->add_string((char *)$1);
                   $$ = long(rem_command);
               }
             ;
 
 del_command : DEL path {
                   print_symbol("del_command");
-		  command *del_command = new command("del", line);
-		  del_command->add_string((char *)$2);
+                  command* del_command = new command("del", line);
+                  del_command->add_string((char *)$2);
                   $$ = long(del_command);
               }
             | DEL option_list  path {
@@ -244,7 +244,7 @@ dir_command : DIR {
             | DIR path {
                   print_symbol("dir_command path");
                   command* dir_command = new command("dir", line);
-		  dir_command->add_string((char *)$2);
+                  dir_command->add_string((char *)$2);
                   $$ = long(dir_command);
               }
             | DIR option_list path {
@@ -262,25 +262,25 @@ exit_command : EXIT {
      
 find_command : FIND string path {
                    print_symbol("find_command path");
-		   command *find_command = new command("find",line);
-		   find_command->add_string((char *)$2);
-		   find_command->add_string((char *)$3);
+                   command* find_command = new command("find",line);
+                   find_command->add_string((char *)$2);
+                   find_command->add_string((char *)$3);
                    $$ = long(find_command);
                }
              | FIND option_list string path {
                    print_symbol("find_command option_list path");
-        	   command *find_command = new command("find",line);
-		   find_command->add_string((char *)$2);
-		   find_command->add_string((char *)$3);
+                   command* find_command = new command("find",line);
+                   find_command->add_string((char *)$2);
+                   find_command->add_string((char *)$3);
                    $$ = long(find_command);
                }
              ;
              
 mkdir_command : MKDIR path {
-                   print_symbol("mkdir_command path");
-               	   command *mkdir_command = new command("mkdir", line);
-	           mkdir_command->add_string((char *)$2);
-		    $$ = long(mkdir_command);
+                    print_symbol("mkdir_command path");
+                    command* mkdir_command = new command("mkdir", line);
+                    mkdir_command->add_string((char *)$2);
+                    $$ = long(mkdir_command);
                 }
               ; 
              
@@ -419,22 +419,22 @@ cd_command : CD {
              }
            | CD path {
                  print_symbol("cd_command path");
-		 command *cd_command = new command("cd",line);
-		 cd_command->add_string((char *)$2);
+                 command* cd_command = new command("cd",line);
+                 cd_command->add_string((char *)$2);
                  $$ = long(cd_command);
              }
-    	   | CD DRIVE_ROOT BACKSLASH { //exception , doesn't do anything 
+           | CD DRIVE_ROOT BACKSLASH { //exception , doesn't do anything 
                  print_symbol("cd_command drive_root\\");
-		 command *cd_command = new command("cd",line);
-		 char drv[256]; 
-		 snprintf(drv,255,"%s/",(char *)$2);
-		 cd_command->add_string(drv);
+                 command* cd_command = new command("cd",line);
+                 char drv[256]; 
+                 snprintf(drv,255,"%s/",(char *)$2);
+                 cd_command->add_string(drv);
                  $$ = long(cd_command);
              }
            | CD DRIVE_ROOT {
                  print_symbol("cd_command drive_root");
-		 command *cd_command = new command("cd", line);
-		 cd_command->add_string((char *)$2);
+                 command* cd_command = new command("cd", line);
+                 cd_command->add_string((char *)$2);
                  $$ = long(cd_command);
              }
            ;
@@ -442,32 +442,32 @@ cd_command : CD {
 fc_command : FC path path {
                  print_symbol("fc path path");
                  $$ = long(new command("fc", line));
-    	     } 
-	       | FC option_list path path {
-	   	         print_symbol("fc option_list path path");
+             } 
+           | FC option_list path path {
+                 print_symbol("fc option_list path path");
                  $$ = long(new command("fc", line));
-    	     }
-	       ;
+             }
+           ;
 
 date_command : DATE {
-	               print_symbol("date_command");
-                   $$ = long(new command("date", line));
-    	       }
-	         | DATE option_list {
-		           print_symbol("date_command arguments");
+                   print_symbol("date_command");
                    $$ = long(new command("date", line));
                }
-	         ; 
+             | DATE option_list {
+                   print_symbol("date_command arguments");
+                   $$ = long(new command("date", line));
+               }
+             ; 
     
 time_command : TIME {
-		           print_symbol("time_command");
+                   print_symbol("time_command");
                    $$ = long(new command("time", line));
-    	       }
-	         | TIME option_list {
-		           print_symbol("time_command arguments");
+               }
+             | TIME option_list {
+                   print_symbol("time_command arguments");
                    $$ = long(new command("time", line));
-    	       }
-	         ;
+               }
+             ;
 
 drive_command : DRIVE_ROOT {
                     print_symbol("drive_command");
@@ -491,45 +491,45 @@ variable : PERCENT ID PERCENT {
 option_list : OPTION { 
                   option_list.clear(); 
                   option_list.push_back((char *)($1)); 
-		}
+              }
             | option_list OPTION {
                   option_list.push_back((char *)($2));  
               }
             ; 
 
 filename : ID {
-	   $$ = $1;
-	 }
+               $$ = $1;
+           }
          | ID DOT ID {
-	   sprintf((char *)$$,"%s.%s",(char *)$1,(char *)$3);
-	 }
+               sprintf((char *)$$,"%s.%s",(char *)$1,(char *)$3);
+           }
          ;
 
 
 path : PATH_LINE {
-     	convert_path((char *)$1);
-     	$$ = $1;
-     }
+           convert_path((char *)$1);
+           $$ = $1;
+       }
      | DRIVE_ROOT BACKSLASH PATH_LINE {
-	convert_path((char *)$3);
-	sprintf((char *)$$,"%s/%s",(char *)$1,(char *)$3);
-     }
+           convert_path((char *)$3);
+           sprintf((char *)$$,"%s/%s",(char *)$1,(char *)$3);
+       }
      | DRIVE_ROOT BACKSLASH filename {
-	sprintf((char *)$$,"%s/%s",(char *)$1,(char *)$3);
-     }
-     | filename	{
-	$$ = $1;
-     }
+           sprintf((char *)$$,"%s/%s",(char *)$1,(char *)$3);
+       }
+     | filename {
+           $$ = $1;
+       }
      ;   
 
 string : STRING {
-       	$$ = $1;
-       } 
+             $$ = $1;
+         } 
        | ID {
-	$$ = $1;
-       }
+             $$ = $1;
+         }
        ;
-	      
+          
 
 %%
 
@@ -568,9 +568,9 @@ void print_symbol(const char *string) {
 }
 
 void convert_path(char *path) {
-	int i;
-	for(i = 0; path[i] != '\0';i++) {
-	     if(path[i] == '\\') path[i] = '/';
-	}
+    int i;
+    for(i = 0; path[i] != '\0';i++) {
+         if(path[i] == '\\') path[i] = '/';
+    }
 }
 
