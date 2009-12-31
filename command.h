@@ -15,6 +15,7 @@ struct argument {
 class command {
 public:
     command(const std::string& name, int line);
+    ~command();
 
     void add_child(command* child); 
     void insert_child(int index, command* child);
@@ -28,10 +29,12 @@ public:
     argument get_argument(int index) const;
     int get_num_args() const;
     void remove_argument(int index);
+    void clear_args();
 
     int get_line() const;
 
     std::string get_name() const;
+    void set_name(const std::string& input);
     
 private:
     std::vector<command*> children; 

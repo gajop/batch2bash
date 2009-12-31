@@ -21,7 +21,7 @@ public:
 class program {
     void index_jumps_labels();
     void connect_jumps();
-    void convert_goto();
+    bool convert_goto();
     void generate_code();
     command* root;
     variables vars;
@@ -29,6 +29,7 @@ class program {
     void print_vars() const; //debug
 public:
     program();
+    ~program();
     command* get_root();
     bool var_exists(const std::string&) const;
     void var_add(const std::string&);

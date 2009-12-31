@@ -34,6 +34,7 @@ public:
     std::vector<jump> jumps;
     std::string name;
     int line;
+    command* comm;
     label(const std::string& name, int line) : name(name), line(line) {}
 	friend int operator <(const label& lhs, const label& rhs);
 	friend int operator ==(const label& lhs, const label& rhs);
@@ -60,9 +61,9 @@ enum block_type { bSIMPLE, bCOND, bLABEL, bHARD, bIGNORE };
 struct block {
     std::vector<block> child_blocks;
     std::vector<jump*> child_jumps;
-    command* comm;
+    std::vector<command*> comms;
     block_type type;
-    block(command* comm) : comm(comm) {}
+    block(command* comm) { comms.push_back(comm); }
     union jump_label {
         label *labl;
         jump *jmp;
@@ -72,8 +73,7 @@ struct block {
 
 block operator +(const block& lhs, const block& rhs) {
     block ret(lhs);
-    ret.child_blocks.insert(ret.child_blocks.end(), rhs.child_blocks.begin(),
-            rhs.child_blocks.end());
+    ret.comms.insert(ret.comms.end(), rhs.comms.begin(), rhs.comms.end());
     ret.type = bSIMPLE; // right?
     return ret;
 }
@@ -81,35 +81,55 @@ block operator +(const block& lhs, const block& rhs) {
 enum s_type { NONE = -1, LABEL, JUMP };
 struct previous {
     s_type type;
-    std::vector<block>::iterator pos;
-    previous(s_type type, std::vector<block>::iterator pos) : type(type), pos(pos) {}
+    int pos;
+    previous(s_type type, int pos) : type(type), pos(pos) {}
 };
 
-block generate_hidden_if(std::vector<block>::iterator begin,
-        std::vector<block>::iterator end, const std::string& predicate) {
-    command* if_comm = new command("if", begin->comm->get_line());
+block generate_hidden_if(const std::vector<block>::iterator& begin,
+        const std::vector<block>::iterator& end, const std::string& predicate) {
+    command* if_comm = new command("if", begin->comms.back()->get_line());
     if_comm->add_option("not");
     if_comm->add_string(predicate);
     //ADD IF COMMAND PREDICATE HERE
-    command* compound_comm = new command("compound", begin->comm->get_line());
+    command* compound_comm = new command("compound",
+            begin->comms.back()->get_line());
     if_comm->add_child(compound_comm);
-    for (std::vector<block>::iterator i = begin + 1; i != end; ++i) {
-        compound_comm->add_child(i->comm);
+        fprintf(stderr, "%d\t%d\n", begin->comms.back(), end->comms.back());
+    if (begin != end) { //just do it once if begin == end
+        for (std::vector<block>::iterator i = begin; i != (end + 1); ++i) {
+            for (int j = 0; j < i->comms.size(); ++j) {
+                compound_comm->add_child(i->comms[j]);
+            }
+        }
+    } else {
+        for (int j = 0; j < begin->comms.size(); ++j) {
+            compound_comm->add_child(begin->comms[j]);
+        }
     }
     block ret(if_comm);
     ret.type = bSIMPLE;
     return ret;
 }
 
-block generate_hidden_while(std::vector<block>::iterator begin,
-        std::vector<block>::iterator end, const std::string& predicate) {
-    command* while_comm = new command("while", begin->comm->get_line());
+block generate_hidden_while(const std::vector<block>::iterator& begin,
+        const std::vector<block>::iterator& end, const std::string& predicate) {
+    command* while_comm = new command("while", begin->comms.back()->get_line());
     //ADD WHILE COMMAND PREDICATE HERE
     while_comm->add_string(predicate);
-    command* compound_comm = new command("compound", begin->comm->get_line());
+    while_comm->add_string("==");
+    while_comm->add_string("1");
+    command* compound_comm = new command("compound", begin->comms.back()->get_line());
     while_comm->add_child(compound_comm);
-    for (std::vector<block>::iterator i = begin + 1; i != end + 1; ++i) {
-        compound_comm->add_child(i->comm);
+    if (begin != end) { //faster this way 
+        for (std::vector<block>::iterator i = begin; i != (end + 1); ++i) {
+            for (int j = 0; j < i->comms.size(); ++j) {
+                compound_comm->add_child(i->comms[j]);
+            }
+        }
+    } else {
+        for (int j = 0; j < begin->comms.size(); ++j) {
+            compound_comm->add_child(begin->comms[j]);
+        }
     }
     block ret(while_comm);
     ret.type = bSIMPLE;
@@ -123,17 +143,14 @@ block recursive_conv_goto(command* parent, program* shared_program) {
             ret.type = bCOND;
             ret.jmplabel.jmp = &jumps.get_jump(parent->get_line());
             ret.child_jumps.push_back(&jumps.get_jump(parent->get_line()));
-            int line = parent->get_line();
-            delete parent;
-            parent = new command("set", line);
-            ret.comm = parent;
+            parent->set_name("set");
+            parent->clear_args();
             ret.jmplabel.jmp->var_name = shared_program->new_var();
             parent->add_string(ret.jmplabel.jmp->var_name); //check if this is okay
             parent->add_string("=");
             parent->add_string("1");
             ret.jmplabel.jmp->var_set = true;
             ret.jmplabel.jmp->predicate_command = parent;
-            //need to create an assignment to a variable here instead of goto
         } else if (parent->get_name() == "label") {
             ret.type = bLABEL;
             try {
@@ -179,90 +196,120 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                 break;
         }
     }
-
+    for (int i = 0; i < child_blocks.size(); ++i) {
+        for (int j = 0; j < child_blocks[i].comms.size(); ++j) {
+            fprintf(stderr, "%d block: %s\n", i,
+                    child_blocks[i].comms[j]->get_name().c_str());
+        }
+    }
+    for (int i = 0; i < parent->get_num_children(); ++i) {
+        fprintf(stderr, "child: %s\n", parent->get_child(i)->get_name().c_str());
+    }
+    fprintf(stderr, "args: %d\n", parent->get_num_children());
     // first find all hidden loops and convert them to simple blocks
     if (child_jumps.size() && child_labels.size()) {
     int label_counter = 0, jump_counter = 0;
-    int line = -1;
+//    int line = -1;
     std::stack<previous> prev;
-    for (std::vector<block>::iterator i = child_blocks.begin(); 
-            i != child_blocks.end();) {
-        line = i->comm->get_line();
+    for (int i = 0; i < child_blocks.size(); ++i) {
+        block current = child_blocks[i];
+        int line = current.comms.back()->get_line(); 
+        //it's ok even though there can be multiple comms
         if (label_counter < child_labels.size() &&
-                line == child_labels[label_counter]->line) {
+                current.comms.back() == child_labels[label_counter]->comm) {
             if (child_labels[label_counter]->jumps.size() == 1 && !prev.empty() && 
                     prev.top().type == JUMP && jump_counter >= 1 &&
                     child_jumps[jump_counter - 1].size() == 1 &&
                     child_labels[label_counter]->jumps.back() ==
                     *child_jumps[jump_counter - 1].front()) {
                 // COND1 SIMPLE* LABEL1 -> COND1 IF!1 SIMPLE* FI!1
-                int begin, end;
+                // prev.top().pos + 1 because we don't want to include cond 
+                // i - 1 because we don't need label anymore
+                int begin = 0, end = 0;
+                // looking for goto/label, there can be only one =)
                 for (int j = 0; j < parent->get_num_children(); ++j) {
-                    if (parent->get_child(j) == prev.top().pos->comm) {
+                    if (parent->get_child(j) == 
+                            child_blocks[prev.top().pos].comms.back()) {
                         begin = j;
-                    } else if (parent->get_child(j) == i->comm) {
+                    }
+                    if (parent->get_child(j) ==
+                            child_blocks[i].comms.back()) {
                         end = j;
                     }
-                }
-                block new_block = generate_hidden_if(prev.top().pos, i, 
-                        child_jumps[jump_counter -1].front()->var_name);
-                child_blocks.insert(i + 1, new_block);
-                child_blocks.erase(prev.top().pos + 1, i++);
-                parent->insert_child(begin + 1, new_block.comm);
-                parent->remove_children(begin + 2, end + 2);
+                }  
+                fprintf(stderr, "\n%d   %d\n", prev.top().pos, i);
+                block new_block = generate_hidden_if(child_blocks.begin() + 
+                        prev.top().pos + 1, child_blocks.begin() + (i - 1),
+                        child_jumps[jump_counter -1].front()->var_name); 
+                // same reasoning for i + 1 here
+                child_blocks.erase(child_blocks.begin() + prev.top().pos + 1, 
+                        child_blocks.begin() + i + 1);
+                child_blocks[prev.top().pos] = new_block;
+                // same as above for i + 1
+                parent->remove_children(begin + 1, end);
+                parent->insert_child(begin + 1, new_block.comms.back());
+                i = prev.top().pos;
                 child_labels.erase(child_labels.begin() + label_counter); 
                 child_jumps.erase(child_jumps.begin() + --jump_counter);
                 prev.pop();
-                continue;
             } else {
                 prev.push(previous(LABEL, i));
                 ++label_counter;
             }
-		} else if (jump_counter < child_jumps.size() && 
-                child_jumps[jump_counter].size() == 1 &&
+		} else if (jump_counter < child_jumps.size() &&
                 line == child_jumps[jump_counter].front()->line) {
-            if (!prev.empty() && prev.top().type == LABEL && label_counter >= 1 && 
+            if (child_jumps[jump_counter].size() == 1 && !prev.empty() 
+                    && prev.top().type == LABEL && label_counter >= 1 && 
                     child_labels[label_counter - 1]->jumps.size() == 1 && 
                     child_labels[label_counter - 1]->jumps.back() ==
                     *child_jumps[jump_counter].front()) {
-                // LABEL1 SIMPLE* COND1 -> WHILE1 SIMPLE* COND1 DONE
-                int begin, end;
+                // LABEL1 SIMPLE* COND1 -> SET COND1_P = 1 WHILE1 SIMPLE* COND1 DONE
+                int begin = 0, end = 0;
+                command* comm = NULL;
                 for (int j = 0; j < parent->get_num_children(); ++j) {
-                    if (parent->get_child(j) == prev.top().pos->comm) {
+                    if (parent->get_child(j) == 
+                            child_blocks[prev.top().pos].comms.back()) {
                         begin = j;
-                    } else if (parent->get_child(j) == i->comm) {
+                    }
+                    if (parent->get_child(j) == child_blocks[i].comms.back()) {
                         end = j;
                     }
-                }
-                block new_block = generate_hidden_while(prev.top().pos, i,
-                       child_jumps[jump_counter].front()->var_name);
-                child_blocks.insert(i + 1, new_block);
-                child_blocks.erase(prev.top().pos + 1, i++);
-                command* comm = parent->get_child(begin);
+                    if (parent->get_child(j) == 
+                            child_blocks[prev.top().pos].comms.back()) {
+                        comm = parent->get_child(j);
+                    }
+                }  
                 int __line = comm->get_line();
-                delete comm;
-                comm = new command("set", line);
+                comm->set_name("set");
+                comm->clear_args();
                 comm->add_string(child_jumps[jump_counter].front()->var_name); //check this
                 comm->add_string("=");
                 comm->add_string("1");
-                parent->insert_child(begin + 1, new_block.comm);
-                parent->remove_children(begin + 2, end + 2);
+                // i + 1 because we don't want to add label
+                block new_block = generate_hidden_while(child_blocks.begin() + 
+                        prev.top().pos + 1, child_blocks.begin() + i,
+                       child_jumps[jump_counter].front()->var_name);
+                child_blocks.erase(child_blocks.begin() + prev.top().pos + 1,
+                        child_blocks.begin() + i);
+                child_blocks.insert(child_blocks.begin() + prev.top().pos + 1,
+                        new_block);
+                parent->remove_children(begin + 1, end); 
+                parent->insert_child(begin + 1, new_block.comms.back());
+                i = prev.top().pos + 1;
                 child_labels.erase(child_labels.begin() + --label_counter);
                 child_jumps.erase(child_jumps.begin() + jump_counter);
                 prev.pop();
-                continue;
             } else {
                 prev.push(previous(JUMP, i));
                 ++jump_counter;
             }
         }
-        ++i;
     }
     }
     // check if any of the remaining labels have jumps that aren't any of the child jumps
+    int counter = 0;
     for (int i = 0; i < child_labels.size(); ++i) {
         // so slow :<
-        int counter = 0;
         for (int j = 0; j < child_jumps.size(); ++j) {
             for (int k = 0; k < child_jumps[j].size(); ++k) {
                 if (child_jumps[j][k]->label == child_labels[i]->name) {
@@ -270,21 +317,142 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                 }
             }
         }
-        if (counter < child_labels.size()) { //there are jumps that aren't happening here
-            ret.type = bHARD;
-            fprintf(stderr, "you are doing it wrong! or i'm parsing it wrong\n");
-            return ret; // scream 
-        }
+    }
+    if (counter < child_labels.size()) { //there are jumps that aren't happening here
+        ret.type = bHARD;
+        fprintf(stderr, "you are doing it wrong! or i'm parsing it wrong\n"
+                "jumps: %d, labels: %d\n", counter, child_labels.size());
+        return ret; // scream 
     }
     // if here life is good
    
-/* 
- *  LEAVING MULTIJUMPS FOR LATER... first test this
+    // MULTIJUMPS
     // now if there are any remaining child_labels and corresponding jumps enclose it all in a big while loop and put ifs inside
-    for (int i = 0; i < child_blocks.size(); ++i) {
-
+    // TODO ACTUALLY DO IT :P
+    if (!child_labels.empty()) {
+        std::vector<block>::iterator while_begin;
+        for (std::vector<block>::iterator i = child_blocks.begin(); 
+                i != child_blocks.end(); ++i) {
+            if (i->type == bLABEL || i->type == bCOND) {
+                while_begin = i;
+                break;
+            }
+        }
+        std::string shared_var = shared_program->new_var();
+        command* comm;
+        std::map<std::string, int> label_predicate;
+        int counter = 1; // when every label is reached predicate is set to 0
+        for (int i = 0; i < child_labels.size(); ++i) {
+            comm = child_labels[i]->comm;
+            comm->remove_argument(comm->get_num_args() - 1);
+            int line = comm->get_line();
+            comm->set_name("set");
+            comm->add_string(shared_var); //check this
+            comm->add_string("=");
+            comm->add_string("1");
+            label_predicate[child_labels[i]->name] = ++counter;
+            comm->add_string(toString(counter));  //ugly but works, remove it later
+        }
+        for (int i = 0; i < child_jumps.size(); ++i) {
+            for (int j = 0; j < child_jumps[i].size(); ++j) {
+                child_jumps[i][j]->var_name = shared_var;
+                comm = child_jumps[i][j]->predicate_command;
+                comm->clear_args();
+                comm->add_string(toString(shared_var));
+                comm->add_string("=");
+                comm->add_string(toString(label_predicate[child_jumps[i][j]->label]));
+            }
+        //add this command
+        }
+        int block_begin = 0;
+        bool in_block = true;
+        int label = 0; // should never happen
+        comm = new command("set", parent->get_child(0)->get_line()); //LINE MAYBE good :P
+        comm->add_string(shared_var); //check this
+        comm->add_string("=");
+        comm->add_string("1");
+//        child_blocks.insert(, comm);
+        for (int i = 0; i < child_blocks.size(); ++i) {
+            block current = child_blocks[i];
+            if (current.type != bCOND && current.type != bLABEL) {
+                in_block = true;
+            } else if  (current.type == bCOND) {
+                in_block = false;
+            } else if (current.type == bLABEL) {
+                label = atoi(current.comms.back()->get_argument(
+                            current.comms.back()->get_num_args() 
+                            - 1).value.c_str());
+                child_blocks[i].comms.back()->remove_argument(child_blocks[i].comms.back()->get_num_args() - 1);
+                in_block = true;
+            }
+            if (i + 1 != child_blocks.size() && 
+                    child_blocks[i + 1].type == bLABEL && (label || in_block)) {
+                in_block = false;
+            }
+            if (!in_block || (i + 1) == child_blocks.size()) {
+                // LABEL SIMPLE COND -> IF [ P_LAB && P0 ] ( SIMPLE COND ) FI 
+                // SIMPLE COND -> IF [ P0 ] ( SIMPLE COND ) FI
+                // note for next : LABEL2 isn't the current command
+                // LABEL1 SIMPLE LABEL2 -> IF [ P_LAB && P0 ] ( SIMPLE ) FI LABEL2 
+                int begin = -1;
+                int end = -1;
+                for (int j = 0; j < parent->get_num_children(); ++j) {
+                    if (parent->get_child(j) == child_blocks[block_begin].comms.back()) {
+                        begin = j;
+                    } 
+                    if (parent->get_child(j) == child_blocks[i].comms.back()) {
+                        end = j;
+                    }
+                }                        
+                block new_block = generate_hidden_if(child_blocks.begin() +
+                        block_begin, child_blocks.begin() + i,
+                        shared_var);
+                new_block.comms.back()->clear_args();
+                new_block.comms.back()->add_string(shared_var);
+                new_block.comms.back()->add_string("==");
+                new_block.comms.back()->add_string("1");
+                fprintf(stderr, "%d\n", label);
+                if (label != 0) {
+                    new_block.comms.back()->add_string("||");
+                    new_block.comms.back()->add_string(shared_var);
+                    new_block.comms.back()->add_string("==");
+                    new_block.comms.back()->add_string(toString(label));
+                }
+                child_blocks.erase(child_blocks.begin() + block_begin
+                        ,i + child_blocks.begin() + 1);
+                child_blocks.insert(child_blocks.begin() + block_begin,
+                        new_block);
+                parent->remove_children(begin, end);
+                parent->insert_child(begin, new_block.comms.back());
+                i = block_begin++;  
+                if (label) {
+                    child_labels.erase(child_labels.begin());
+                }
+//                if (current.type == bCOND) {
+//                    child_jumps.erase();
+ //               }
+              
+                in_block = false;
+                label = 0;
+            }
+        }
+        block new_block = generate_hidden_while(child_blocks.begin(), 
+                child_blocks.begin() + child_blocks.size() - 1,
+                shared_var);
+        new_block.comms.back()->clear_args();
+        new_block.comms.back()->add_string(shared_var);
+        new_block.comms.back()->add_string("!=");
+        new_block.comms.back()->add_string("0");
+        new_block.comms.back()->add_string("||");
+        new_block.comms.back()->add_string(shared_var);
+        new_block.comms.back()->add_string(">");
+        new_block.comms.back()->add_string(toString(label_predicate.size() + 1));
+        child_blocks.erase(child_blocks.begin(), child_blocks.end());
+        child_blocks[0] = new_block;
+        parent->remove_children(0, parent->get_num_children() - 1); 
+        parent->add_child(new_block.comms.back());
     }
-*/
+
     ret.child_blocks = child_blocks;
 	for (std::vector<std::vector<jump*> >::iterator i = child_jumps.begin();
             i != child_jumps.end(); ++i) {
@@ -355,11 +523,12 @@ void program::connect_jumps() {
     }
 }
 
-void program::convert_goto() {
+bool program::convert_goto() {
     block ret = recursive_conv_goto(root, this);
     print_vars();
     if (ret.type == bHARD) { 
         fprintf(stderr, "not possible to convert goto");
+        return false;
     }
 }
 
@@ -610,4 +779,7 @@ void program::print_vars() const {
     for (int i = 0; i < num_vars(); ++i) {
         printf("%s\n", var_at(i).c_str());
     }
+}
+program::~program() {
+//    delete root;
 }

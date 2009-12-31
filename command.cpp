@@ -25,9 +25,7 @@ int command::get_num_children() const {
 }
 
 void command::remove_children(int begin, int end) {
-    fprintf(stderr, "BEFORE %d\n", children.size());
-    children.erase(children.begin() + begin, children.begin() + end);
-    fprintf(stderr, "AFTER %d\n", children.size());
+    children.erase(children.begin() + begin, children.begin() + end + 1);
 }
 
 void command::add_option(const std::string& value) {
@@ -56,10 +54,24 @@ void command::remove_argument(int index) {
     args.erase(args.begin() + index);
 }
 
+void command::clear_args() {
+    args.clear();
+}
+
 int command::get_line() const {
     return line;
 }
 
 std::string command::get_name() const {
     return name;
+}
+
+void command::set_name(const std::string& input) {
+    name = input;
+}
+
+command::~command() {
+    for (int i = 0; i < children.size(); ++i) {
+        delete children[i];
+    }
 }
