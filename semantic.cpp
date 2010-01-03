@@ -781,5 +781,7 @@ void program::print_vars() const {
     }
 }
 program::~program() {
-//    delete root;
+    if (root != NULL) {
+//        delete root;
+    }
 }

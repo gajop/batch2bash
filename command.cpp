@@ -71,7 +71,8 @@ void command::set_name(const std::string& input) {
 }
 
 command::~command() {
-    for (int i = 0; i < children.size(); ++i) {
-        delete children[i];
-    }
+//    while (!children.empty()) {
+//        delete children[children.size() - 1];
+//        children.pop_back();
+//    }
 }
