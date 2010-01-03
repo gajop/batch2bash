@@ -447,8 +447,8 @@ block recursive_conv_goto(command* parent, program* shared_program) {
         new_block.comms.back()->add_string(shared_var);
         new_block.comms.back()->add_string(">");
         new_block.comms.back()->add_string(toString(label_predicate.size() + 1));
-        child_blocks.erase(child_blocks.begin(), child_blocks.end());
-        child_blocks[0] = new_block;
+        child_blocks.clear();
+        child_blocks.push_back(new_block);
         parent->remove_children(0, parent->get_num_children() - 1); 
         parent->add_child(new_block.comms.back());
     }
