@@ -191,7 +191,7 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                 fprintf(stderr, "label line : %d\n", result.jmplabel.labl->line);
                 break;
             case bIGNORE :
-                parent->remove_children(i, i--);
+                parent->remove_children(i, i - 1);
                 fprintf(stderr, "unused label at\n");
                 break;
         }
@@ -782,6 +782,6 @@ void program::print_vars() const {
 }
 program::~program() {
     if (root != NULL) {
-//        delete root;
+        delete root;
     }
 }

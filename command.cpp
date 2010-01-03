@@ -1,4 +1,7 @@
 #include "command.h"
+#include <stdexcept>
+#include "utility.hpp"
+
 
 argument::argument(const std::string& value, const argument_type& type) : 
     value(value), type(type) {
@@ -25,6 +28,12 @@ int command::get_num_children() const {
 }
 
 void command::remove_children(int begin, int end) {
+    if (begin < 0) {
+        throw std::logic_error("start index is below zero " + toString(begin));
+    } else if (end + 1 > children.size()) {
+        throw std::logic_error("end index " + toString(end) + 
+                " is larger than amount of elements " + toString(children.size()));
+    }
     children.erase(children.begin() + begin, children.begin() + end + 1);
 }
 
@@ -71,8 +80,8 @@ void command::set_name(const std::string& input) {
 }
 
 command::~command() {
-//    while (!children.empty()) {
-//        delete children[children.size() - 1];
-//        children.pop_back();
-//    }
+    while (!children.empty()) {
+        delete children.back();
+        children.pop_back();
+    }
 }
