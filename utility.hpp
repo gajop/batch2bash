@@ -11,4 +11,12 @@ inline std::string toString(const elType& in){
 	out << in;
 	return out.str();
 }
+
+template<class T>
+T fromString(const std::string& s) {
+     std::istringstream stream (s);
+     T t;
+     stream >> t;
+     return t;
+}
 #endif

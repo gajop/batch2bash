@@ -25,8 +25,8 @@ public:
     unsigned num_jumps() const;
     jump& get_jump(int line);
     const jump& get_jump(int line) const;
-    void add_jump(std::string label, int line) const;
-    void remove_jump(unsigned line) const;
+    jump& get_jump(const std::string& label);
+    const jump& get_jump(const std::string& label) const;
 };
 
 class label {
@@ -38,7 +38,6 @@ public:
     label(const std::string& name, int line) : name(name), line(line) {}
 	friend int operator <(const label& lhs, const label& rhs);
 	friend int operator ==(const label& lhs, const label& rhs);
-    //command*
 };
 
 class label_list {
@@ -94,7 +93,6 @@ block generate_hidden_if(const std::vector<block>::iterator& begin,
     command* compound_comm = new command("compound",
             begin->comms.back()->get_line());
     if_comm->add_child(compound_comm);
-        fprintf(stderr, "%d\t%d\n", begin->comms.back(), end->comms.back());
     if (begin != end) { //just do it once if begin == end
         for (std::vector<block>::iterator i = begin; i != (end + 1); ++i) {
             for (int j = 0; j < i->comms.size(); ++j) {
@@ -188,28 +186,15 @@ block recursive_conv_goto(command* parent, program* shared_program) {
             case bLABEL : // just one label, in no block
                 child_blocks.push_back(result);
                 child_labels.push_back(result.jmplabel.labl);
-                fprintf(stderr, "label line : %d\n", result.jmplabel.labl->line);
                 break;
             case bIGNORE :
                 parent->remove_children(i, i - 1);
-                fprintf(stderr, "unused label at\n");
                 break;
         }
     }
-    for (int i = 0; i < child_blocks.size(); ++i) {
-        for (int j = 0; j < child_blocks[i].comms.size(); ++j) {
-            fprintf(stderr, "%d block: %s\n", i,
-                    child_blocks[i].comms[j]->get_name().c_str());
-        }
-    }
-    for (int i = 0; i < parent->get_num_children(); ++i) {
-        fprintf(stderr, "child: %s\n", parent->get_child(i)->get_name().c_str());
-    }
-    fprintf(stderr, "args: %d\n", parent->get_num_children());
     // first find all hidden loops and convert them to simple blocks
     if (child_jumps.size() && child_labels.size()) {
     int label_counter = 0, jump_counter = 0;
-//    int line = -1;
     std::stack<previous> prev;
     for (int i = 0; i < child_blocks.size(); ++i) {
         block current = child_blocks[i];
@@ -237,7 +222,6 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                         end = j;
                     }
                 }  
-                fprintf(stderr, "\n%d   %d\n", prev.top().pos, i);
                 block new_block = generate_hidden_if(child_blocks.begin() + 
                         prev.top().pos + 1, child_blocks.begin() + (i - 1),
                         child_jumps[jump_counter -1].front()->var_name); 
@@ -321,7 +305,7 @@ block recursive_conv_goto(command* parent, program* shared_program) {
     if (counter < child_labels.size()) { //there are jumps that aren't happening here
         ret.type = bHARD;
         fprintf(stderr, "you are doing it wrong! or i'm parsing it wrong\n"
-                "jumps: %d, labels: %d\n", counter, child_labels.size());
+                "jumps: %d, labels: %u\n", counter, (unsigned)child_labels.size());
         return ret; // scream 
     }
     // if here life is good
@@ -331,6 +315,7 @@ block recursive_conv_goto(command* parent, program* shared_program) {
     // TODO ACTUALLY DO IT :P
     if (!child_labels.empty()) {
         std::vector<block>::iterator while_begin;
+        std::vector<int> jumps_out;
         for (std::vector<block>::iterator i = child_blocks.begin(); 
                 i != child_blocks.end(); ++i) {
             if (i->type == bLABEL || i->type == bCOND) {
@@ -355,6 +340,12 @@ block recursive_conv_goto(command* parent, program* shared_program) {
         }
         for (int i = 0; i < child_jumps.size(); ++i) {
             for (int j = 0; j < child_jumps[i].size(); ++j) {
+                if (label_predicate.find(child_jumps[i][j]->label) 
+                        == label_predicate.end()) {
+                    int var_num = label_predicate.size() + 2;
+                    jumps_out.push_back(var_num);
+                    label_predicate[child_jumps[i][j]->label] = var_num; //hmm 
+                }
                 child_jumps[i][j]->var_name = shared_var;
                 comm = child_jumps[i][j]->predicate_command;
                 comm->clear_args();
@@ -411,7 +402,6 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                 new_block.comms.back()->add_string(shared_var);
                 new_block.comms.back()->add_string("==");
                 new_block.comms.back()->add_string("1");
-                fprintf(stderr, "%d\n", label);
                 if (label != 0) {
                     new_block.comms.back()->add_string("||");
                     new_block.comms.back()->add_string(shared_var);
@@ -428,14 +418,53 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                 if (label) {
                     child_labels.erase(child_labels.begin());
                 }
-//                if (current.type == bCOND) {
-//                    child_jumps.erase();
- //               }
-              
                 in_block = false;
                 label = 0;
             }
         }
+        command* set_comm = new command("set", parent->get_line());
+        set_comm->add_string(shared_var);
+        set_comm->add_string("=");
+        set_comm->add_string("0");
+        block set_block(set_comm);
+        command* if_comm = new command("if", parent->get_line());
+        command* compound_comm = new command("compound", parent->get_line());
+        if_comm->add_child(compound_comm);
+        compound_comm->add_child(set_comm);
+        if_comm->add_string(shared_var);
+        if_comm->add_string("==");
+        if_comm->add_string("1");
+        block if_block(if_comm);
+        block compound_block(compound_comm);
+        for (int i = 0; i < child_jumps.size(); ++i) {
+            for (int j = 0; j < child_jumps[i].size(); ++j) {
+                if (label_predicate.find(child_jumps[i][j]->label) !=
+                        label_predicate.end()) {
+                    std::string str = child_jumps[i][j]->predicate_command->get_argument
+                        (child_jumps[i][j]->predicate_command->get_num_args() - 1).value;
+                    int num = fromString<int>(str);
+                    if (find(jumps_out.begin(), jumps_out.end(), num) == jumps_out.end()) {
+                        child_jumps[i].erase(child_jumps[i].begin() + j);
+                        j--;
+                    } else {
+                        if_comm->add_string("||");
+                        if_comm->add_string(shared_var);
+                        if_comm->add_string("==");
+                        if_comm->add_string(toString(num));
+                        set_comm = new command("set", parent->get_line());
+                        set_comm->add_string(shared_var);
+                        set_comm->add_string("=");
+                        set_comm->add_string(toString(num));
+                        child_jumps[i][j]->predicate_command = set_comm;
+                        compound_comm->add_child(set_comm);
+                        compound_block.child_blocks.push_back(block(set_comm));
+                    }
+                }
+            }
+        }
+        if_block.child_blocks.push_back(compound_block);
+        child_blocks.push_back(if_block);
+        parent->add_child(if_comm);
         block new_block = generate_hidden_while(child_blocks.begin(), 
                 child_blocks.begin() + child_blocks.size() - 1,
                 shared_var);
@@ -443,10 +472,6 @@ block recursive_conv_goto(command* parent, program* shared_program) {
         new_block.comms.back()->add_string(shared_var);
         new_block.comms.back()->add_string("!=");
         new_block.comms.back()->add_string("0");
-        new_block.comms.back()->add_string("||");
-        new_block.comms.back()->add_string(shared_var);
-        new_block.comms.back()->add_string(">");
-        new_block.comms.back()->add_string(toString(label_predicate.size() + 1));
         child_blocks.clear();
         child_blocks.push_back(new_block);
         parent->remove_children(0, parent->get_num_children() - 1); 
@@ -462,7 +487,7 @@ block recursive_conv_goto(command* parent, program* shared_program) {
 	}
     if (child_labels.size() > 0) { // there are some child_labels in this block to which no jump has been performed to
         ret.type = bHARD;
-    } else if (child_jumps.size() > 0) {
+    } else if (ret.child_jumps.size() > 0) {
         ret.type = bCOND;
     } else {
         ret.type = bSIMPLE;
@@ -658,6 +683,24 @@ jump& jump_list::get_jump(int line) {
         }
     }
     throw std::logic_error("jump doesn't exist on line: " + toString(line));
+}
+
+jump& jump_list::get_jump(const std::string& label) {
+    for (int i = 0; i < jumps.size(); ++i) {
+        if (jumps[i].label == label) {
+            return jumps[i];
+        }
+    }
+    throw std::logic_error("jump doesn't with that label: " + label);
+}
+
+const jump& jump_list::get_jump(const std::string& label) const {
+    for (int i = 0; i < jumps.size(); ++i) {
+        if (jumps[i].label == label) {
+            return jumps[i];
+        }
+    }
+    throw std::logic_error("jump doesn't with that label: " + label);
 }
 
 int operator <(const jump& lhs, const jump& rhs) {
