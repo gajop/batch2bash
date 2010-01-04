@@ -114,7 +114,7 @@ std::string translate(command* comm, int round, std::vector<command*> prev, int&
 
 std::string add_args(const std::string& translated_name, command* comm) {
     std::string ret = translated_name;
-    for (int i = 0; i < comm->get_num_args(); ++i) {
+    for (unsigned i = 0; i < comm->get_num_args(); ++i) {
         argument arg = comm->get_argument(i);
         ret = add_arg(ret, arg);
     }

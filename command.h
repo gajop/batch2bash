@@ -20,15 +20,15 @@ public:
     void add_child(command* child); 
     void insert_child(int index, command* child);
     command* get_child(int index);
-    int get_num_children() const;
+    unsigned get_num_children() const;
     void remove_children(int begin, int end);
 
     void add_option(const std::string& value);
     void add_options(const std::vector<std::string>& input_vector);
     void add_string(const std::string& value);
-    argument get_argument(int index) const;
-    int get_num_args() const;
-    void remove_argument(int index);
+    argument get_argument(unsigned index) const;
+    unsigned get_num_args() const;
+    void remove_argument(unsigned index);
     void clear_args();
 
     int get_line() const;
@@ -39,8 +39,8 @@ public:
 private:
     std::vector<command*> children; 
     std::vector<argument> args; 
-    int line;
     std::string name;
+    int line;
 };
 
 #endif

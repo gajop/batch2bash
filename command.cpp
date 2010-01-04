@@ -23,14 +23,14 @@ command* command::get_child(int index) {
     return children.at(index);
 }
 
-int command::get_num_children() const {
+unsigned command::get_num_children() const {
     return children.size();
 }
 
 void command::remove_children(int begin, int end) {
     if (begin < 0) {
         throw std::logic_error("start index is below zero " + toString(begin));
-    } else if (end + 1 > children.size()) {
+    } else if (unsigned(end + 1) > children.size()) {
         throw std::logic_error("end index " + toString(end) + 
                 " is larger than amount of elements " + toString(children.size()));
     }
@@ -42,7 +42,7 @@ void command::add_option(const std::string& value) {
 }
 
 void command::add_options(const std::vector<std::string>& input_vector) {
-    for (int i = 0; i < input_vector.size(); ++i) {
+    for (unsigned i = 0; i < input_vector.size(); ++i) {
         args.push_back(argument(input_vector[i], aSTRING));
     }
 }
@@ -51,15 +51,15 @@ void command::add_string(const std::string& value) {
     args.push_back(argument(value, aSTRING));
 }
 
-argument command::get_argument(int index) const {
+argument command::get_argument(unsigned index) const {
     return args[index];
 }
 
-int command::get_num_args() const {
+unsigned command::get_num_args() const {
     return args.size();
 }
 
-void command::remove_argument(int index) {
+void command::remove_argument(unsigned index) {
     args.erase(args.begin() + index);
 }
 
