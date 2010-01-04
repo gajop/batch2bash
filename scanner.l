@@ -22,7 +22,7 @@ newline             \n|\n\r
 
 %%
 
-echo[[:blank:]"."][^\n)^">"^">>"|"<"]*   { yylval = (long)strdup(yytext + 5); if (DEBUG) print_token("ECHO\n"); return ECHO; }
+echo[[:blank:]"."][^\n)^>^((>>)|(<))]*   { yylval = (long)strdup(yytext + 5); if (DEBUG) print_token("ECHO\n"); return ECHO; }
 
 (rem[\t ]+.*)|rem                  { yylval = (long)strdup(yytext + 3); if (DEBUG) print_token("REM\n"); return REM; }
 

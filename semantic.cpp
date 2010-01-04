@@ -474,8 +474,10 @@ block recursive_conv_goto(command* parent, program* shared_program) {
         new_block.comms.back()->add_string("!=");
         new_block.comms.back()->add_string("0");
         child_blocks.clear();
+        child_blocks.push_back(block(comm));
         child_blocks.push_back(new_block);
         parent->remove_children(0, parent->get_num_children() - 1); 
+        parent->add_child(comm);
         parent->add_child(new_block.comms.back());
     }
 
@@ -530,10 +532,15 @@ void program::index_jumps_labels() {
     }
 }
 
-void program::connect_jumps() { 
+bool program::connect_jumps() { 
 	for (std::vector<jump>::iterator i = jumps.jumps.begin();
             i != jumps.jumps.end(); ++i) {
-		labels.add_jump(*i);
+        try {
+    		labels.add_jump(*i);
+        } catch (std::logic_error& err) {
+            fprintf(stderr, "%s\n", err.what());
+            return false;
+        }
     } 
     label_list unused = labels;
     // read the info file, all the documentation is there
@@ -542,13 +549,15 @@ void program::connect_jumps() {
 		if (unused.label_exists(i->label)) {
 			unused.remove_label(i->label);
         } else {
-            throw std::logic_error("jump to an unknown label");
+            throw fprintf(stderr, "jump to an unknown label\n");
+            return false;
         }
     }
 	for (std::vector<label>::iterator i = unused.labels.begin();
             i != unused.labels.end(); ++i) {
         labels.remove_label(i->name);
     }
+    return true;
 }
 
 bool program::convert_goto() {
@@ -592,9 +601,11 @@ void program::generate_code() {
     }
 }
 
-void program::generate_bash(int debug) {
+bool program::generate_bash(int debug) {
     index_jumps_labels();
-    connect_jumps();
+    if (!connect_jumps()) {
+        return false;
+    }
     if (debug != 0) {
         for (std::vector<label>::iterator i = labels.labels.begin(); 
                 i != labels.labels.end(); ++i) {
@@ -605,12 +616,15 @@ void program::generate_bash(int debug) {
             }
         }
     }
-    convert_goto();
+    if (!convert_goto()) {
+        return false;
+    }
     print_program_tree();
     if (debug != 0) {
         printf("\ngenerated code:\n");
     }
     generate_code();
+    return true;
 }
 
 bool label_list::label_exists(const std::string& name) const {

@@ -20,7 +20,7 @@ public:
 
 class program {
     void index_jumps_labels();
-    void connect_jumps();
+    bool connect_jumps();
     bool convert_goto();
     void generate_code();
     command* root;
@@ -44,7 +44,7 @@ public:
      * 3. convert all jumps and labels into ifs/whiles and similar
      * 4. generate bash file with a 1:1 match
      * */
-    void generate_bash(int debug = 0);
+    bool generate_bash(int debug = 0);
     /* prints semantic tree
      * prints the name of the commands of the semantic tree
      * with the given indentation

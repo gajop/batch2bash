@@ -1,4 +1,4 @@
-(
+if errorlevel 2 (
     echo 1
     goto three
     echo 2
@@ -17,4 +17,6 @@
     goto four
     echo 8
 )
+echo "hey"
+echo ho
 :out
