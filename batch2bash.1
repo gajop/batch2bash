@@ -1,0 +1,18 @@
+.TH BATCH2BASH 1 "2010-1-4"
+.SH "NAME"
+batch2bash - Batch to bash translator
+.SH "SYNOPSIS"
+.B "batch2bash" [-d] -i infile -o outfile
+.SH "DESCRIPTION"
+Given a working, syntaticly and semanticly correct(!) batch file it produces a bash file. Only exception are some weird goto jumps which you should avoid in general.
+You still need to make the output file executable if that is your intention.
+.SH OPTIONS
+.TP
+\fB-d\fR
+enable debugging
+.TP
+\fB-i infile\fR
+input batch file
+.TP 
+\fB-o outfile\fR
+output bash file
