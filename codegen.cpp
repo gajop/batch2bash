@@ -40,11 +40,13 @@ REM # commend
 
 lookup_commands::lookup_commands() {
     std::string orig[] = { "assign", "attrib", "chdir", "cls", "comp", "copy", "del",
-        "erase", "fc", "find", "md", "move", "rd", "time", "type", "xcopy","rem", "dir", "deltree", "path" };
+        "erase", "fc", "find", "md", "move", "rd", "time", "type", "xcopy","rem", "dir",
+        "deltree", "path", "date", "sort","set_line","unset","set"};
 
     std::string trans[] = { "ln", "attrib", "cd", "clear", "diff", "cp", "rm",
-        "rm", "comm", "grep", "mkdir", "mv", "rmdir", "date", "cat", "cp" ,"#","ls -l", "rm -r", "export"};
-    int num = 20;
+        "rm", "comm", "grep", "mkdir", "mv", "rmdir", "date", "cat", "cp" ,"#","ls -l",
+        "rm -r", "export", "date", "sort","env","unset","" };
+    int num = 25;
     for (int i = 0; i < num; ++i) {
         comms[orig[i]] = trans[i];
     }
@@ -146,8 +148,8 @@ options::options(){
     opts["/v"] = " ";
     opts["/Y"] = " ";
     opts["/y"] = " ";
-    opts["/~Y"]= "-i"; 
-    opts["/~y"]= "-i";
+    opts["/-Y"]= "-i"; 
+    opts["/-y"]= "-i";
     options_map["copy"] = opts;
     opts.clear();
     //deltree options
@@ -193,7 +195,55 @@ options::options(){
     opts["/v"] = "-v";
     options_map["find"] = opts;
     opts.clear();
+    //more options 
+    opts["/T4"] = " ";
+    opts["/t4"] = " ";
+    options_map["more"] = opts;
+    opts.clear();
+    //move options
+    opts["/Y"] = "-f";
+    opts["/y"] = "-f";
+    opts["/-Y"]= " ";
+    opts["/-y"]= " ";
+    opts["/V"] = " ";
+    opts["/v"] = " ";
+    options_map["move"] = opts;
+    opts.clear();
+    //fc options NOT DONE!
+    opts["/A"] = " ";
+    opts["/a"] = " ";
+    options_map["fc"] = opts;
+    opts.clear();
+    //date options
+    opts["/D"] = " ";
+    opts["/d"] = " ";
+    options_map["date"] = opts;
+    opts.clear();
+    //time options
+    opts["/T"] = " ";
+    opts["/t"] = " ";
+    options_map["time"] = opts;
+    opts.clear();
+    //sort oprions
+    opts["/R"] = "-r";
+    opts["/r"] = "-r";
+    opts["/N"] = " ";
+    opts["/n"] = " ";
+    options_map["sort"] = opts;
+    opts.clear();
+    //set options 
+    opts["/C"] = " ";
+    opts["/c"] = " ";
+    opts["/P"] = " ";
+    opts["/p"] = " ";
+    opts["/U"] = " ";
+    opts["/u"] = " ";
+    options_map["set"] = opts;
+    opts.clear();
+    //
     
+
+
 }
 
 options opts;

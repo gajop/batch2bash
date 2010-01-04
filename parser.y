@@ -170,6 +170,7 @@ normal_command : compound_command { $$ = $1; }
                | date_command { $$ = $1; }
                | time_command { $$ = $1; }
                | copy_command { $$ = $1; }
+               | sort_command {$$ = $1; }
                ;
 
 
@@ -207,7 +208,7 @@ compound_command : LPAREN {
 echo_command : ECHO {
                    print_symbol("echo_command"); 
                    char echo[256];
-                   snprintf(echo,255,"\"%s\"",$1);
+                   snprintf(echo,255,"\"%s\"",(char *)$1);
                    command* echo_command = new command("echo", line);
                    echo_command->add_string(echo);
                    $$ = long(echo_command);
@@ -355,13 +356,35 @@ mkdir_command : MKDIR path {
                 }
               ; 
              
-more_command : MORE filename {
+sort_command : SORT {
+                print_symbol("sort_command");
+                $$ = long(new command("sort",line));
+                }
+             | SORT option_list {
+                print_symbol("sort_command option_list");
+                command* sort_command = new command("sort",line);
+                trans_opts("sort");
+                sort_command->add_options(option_list);
+                $$ = long(sort_command);
+                }
+
+more_command : MORE {
+                print_symbol("more_command");
+                $$ = long(new command("more",line));
+               }  
+             | MORE filename {
                    print_symbol("more_command filename");
-                   $$ = long(new command("more", line));
+                   command* more_command = new command("more",line);
+                   more_command->add_string((char *)$2);
+                   $$ = long(more_command);
                }
              | MORE option_list filename {
                    print_symbol("more_command option_list filename");
-                   $$ = long(new command("more", line));
+                   command* more_command = new command("more", line);
+                   more_command->add_string((char *)$3);
+                   trans_opts("more");
+                   more_command->add_options(option_list);
+                   $$ = long(more_command);
                }
              ;
 
@@ -377,6 +400,7 @@ move_command : MOVE path path {
                    command* move_command = new command("move",line);
                    move_command->add_string((char *)$3);
                    move_command->add_string((char *)$4);
+                   trans_opts("move");
                    move_command->add_options(option_list);
                    $$ = long(move_command);
                }
@@ -486,19 +510,39 @@ call_command : CALL path {
         
 set_command : SET {
                   print_symbol("set_command");
-                  $$ = long(new command("set", line));
+                  $$ = long(new command("set_line", line));
               }
-            | SET option_list {
-                  print_symbol("set_command option_list");
-                  $$ = long(new command("set", line));
+            | SET variable {
+                  print_symbol("set_command");
+                  command* set_command = new command("echo",line);
+                  char temp[256];
+                  snprintf(temp,255,"$%s",(char *)$2);
+                  set_command->add_string(temp);
+                  $$ = long(set_command);
               }
-            | SET ID ASSIGN_OP string {
+            | SET variable ASSIGN {
+                  print_symbol("set_command variable=");
+                  command* set_command = new command("unset",line);
+                  set_command->add_string((char *)$2);
+                  $$ = long(set_command);
+              }
+            | SET variable ASSIGN_OP string {
                   print_symbol("set_command id = string");
-                  $$ = long(new command("set", line));
+                  command* set_command = new command("set",line);
+                  char temp[256];
+                  snprintf(temp,255,"%s=%s",(char *)$2,(char *)$4);
+                  set_command->add_string(temp);
+                  $$ = long(set_command);
               }
-            | SET option_list ID ASSIGN_OP string {
+            | SET option_list variable ASSIGN_OP string {
                   print_symbol("set_command option_list id = string");
-                  $$ = long(new command("set", line));
+                  command* set_command = new command("set",line);
+                  char temp[256];
+                  snprintf(temp,255,"%s=%s",(char *)$3,(char *)$5);
+                  set_command->add_string(temp);
+                  trans_opts("set");
+                  set_command->add_options(option_list);
+                  $$ = long(set_command);
               }
             ;
 
@@ -530,11 +574,19 @@ cd_command : CD {
 
 fc_command : FC path path {
                  print_symbol("fc path path");
-                 $$ = long(new command("fc", line));
+                 command* fc_command = new command("fc",line);
+                 fc_command->add_string((char *)$2);
+                 fc_command->add_string((char *)$3);
+                 $$ = long(fc_command);
              } 
            | FC option_list path path {
                  print_symbol("fc option_list path path");
-                 $$ = long(new command("fc", line));
+                 command* fc_command = new command("fc",line);
+                 fc_command->add_string((char *)$2);
+                 fc_command->add_string((char *)$3);
+//                 trans_opts("fc");
+                 fc_command->add_options(option_list);
+                 $$ = long(fc_command);
              }
            ;
 
@@ -544,7 +596,10 @@ date_command : DATE {
                }
              | DATE option_list {
                    print_symbol("date_command arguments");
-                   $$ = long(new command("date", line));
+                   command* date_command = new command("date",line);
+                   trans_opts("date");
+                   date_command->add_options(option_list);
+                   $$ = long(date_command);
                }
              ; 
     
@@ -554,13 +609,16 @@ time_command : TIME {
                }
              | TIME option_list {
                    print_symbol("time_command arguments");
-                   $$ = long(new command("time", line));
+                   command* time_command = new command("time",line);
+                   trans_opts("time");
+                   time_command->add_options(option_list);
+                   $$ = long(time_command);
                }
              ;
 
 drive_command : DRIVE_ROOT {
                     print_symbol("drive_command");
-                    $$ = long(new command("drive", line));
+                 //   $$ = long(new command("drive", line));
                 }
               ;
                
@@ -666,4 +724,3 @@ void convert_path(char *path) {
          if(path[i] == '\\') path[i] = '/';
     }
 }
-

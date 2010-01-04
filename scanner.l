@@ -26,7 +26,7 @@ echo[[:blank:]"."][^\n)^">"^">>"|"<"]*   { yylval = (long)strdup(yytext + 5); if
 
 (rem[\t ]+.*)|rem                  { yylval = (long)strdup(yytext + 3); if (DEBUG) print_token("REM\n"); return REM; }
 
-"/"[a-zA-Z0-9|?|:]+                       { yylval = (long)strdup(yytext); if (DEBUG) print_token("ARGUMENTS\n"); return OPTION; } 
+"/"[a-zA-Z0-9|?|:|-]+                       { yylval = (long)strdup(yytext); if (DEBUG) print_token("ARGUMENTS\n"); return OPTION; } 
 call                    { if (DEBUG) print_token("CALL\n"); return CALL; }
 choice                  { if (DEBUG) print_token("CHOICE\n"); return CHOICE; }
 con                     { if (DEBUG) print_token("CONSOLE\n"); return CONSOLE; }
