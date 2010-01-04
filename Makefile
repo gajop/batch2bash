@@ -1,7 +1,7 @@
 LEX_SRC = scanner.l
 YACC_SRC = parser.y
 CC = g++
-CFLAGS = -Wno-write-strings -pg -Wall
+CFLAGS = -Wno-write-strings -g -Wall
 
 .PHONY: clean
 

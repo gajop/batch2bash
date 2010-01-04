@@ -52,7 +52,7 @@ void command::add_string(const std::string& value) {
 }
 
 argument command::get_argument(unsigned index) const {
-    return args[index];
+    return args.at(index);
 }
 
 unsigned command::get_num_args() const {
@@ -60,6 +60,9 @@ unsigned command::get_num_args() const {
 }
 
 void command::remove_argument(unsigned index) {
+    if (index >= args.size()) {
+        throw std::logic_error("there aren't that many arguments\n");
+    }
     args.erase(args.begin() + index);
 }
 
