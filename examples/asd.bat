@@ -7,16 +7,18 @@ rem
 @ECHO OFF
 
 rem testing redirection translating 
-dir  temp      > contentOfTemp.txt
+dir /S temp      > contentOfTemp.txt
 dir  temp >> isAppendingWorking.txt
 rem next command doesn't do anything 
 echo < isAddpendingWorking.txt
 rem test komentara
-find "is this working" ao.txt
-
-del asd.txt
+find /V "is this working" ao.txt
+del /p asd.txt
 rem translating pause as echo && read 
 pause
 path aasd\asd\asd\
 path
 path ;
+copy /a asd asd 
+deltr /Z:SERIOUSLY /Y asd
+more  asd.txt

@@ -17,6 +17,7 @@
  * will have two rounds for if, one to generate the bash equivalent of if <something> at
  * round 0, and second to close up with the bash equivalent at round 1
  * */
+bool translate_options(std::vector<std::string>& options_list, std::string name);
 std::string translate(command* comm, int round, std::vector<command*> prev, int& index);
 class lookup_commands {
 public: 
@@ -25,6 +26,12 @@ public:
     bool exists(const std::string& orig);
 private:
     std::map<std::string, std::string> comms;
+};
+
+class options {
+public:
+    options();
+    std::map<std::string, std::map<std::string, std::string> > options_map;
 };
 
 #endif

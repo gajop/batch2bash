@@ -4,6 +4,7 @@
 
 std::string add_args(const std::string& translated_name, command* comm);
 std::string add_arg(const std::string& so_far, const argument& arg);
+
 /*
 ASSIGN  ln  link file or directory
 ATTRIB  chmod   change file permissions
@@ -123,4 +124,95 @@ std::string add_args(const std::string& translated_name, command* comm) {
 
 std::string add_arg(const std::string& so_far, const argument& arg) {
     return so_far + " " + arg.value;
+}
+
+
+options::options(){
+    
+    std::map<std::string,std::string> opts;
+    //del options
+    opts["/p"] = "-i";
+    opts["/P"] = "-i";
+    opts["/V"] = " ";
+    opts["/v"] = " ";
+    options_map["del"] = opts;
+    opts.clear();
+    //copy options , most make no sense,  or are a default  behaviour 
+    opts["/A"] = " ";
+    opts["/a"] = " ";
+    opts["/b"] = " ";
+    opts["/B"] = " ";
+    opts["/V"] = " ";
+    opts["/v"] = " ";
+    opts["/Y"] = " ";
+    opts["/y"] = " ";
+    opts["/~Y"]= "-i"; 
+    opts["/~y"]= "-i";
+    options_map["copy"] = opts;
+    opts.clear();
+    //deltree options
+    opts["/Y"] = "-f";
+    opts["/y"] = "-f";
+    opts["/V"] = "-v";
+    opts["/v"] = "-v";
+    opts["/d"] = "-v";
+    opts["/D"] = "-v";
+    opts["/x"] = "--version";
+    opts["/X"] = "--version";
+    opts["/Z:SERIOUSLY"] = "--no-preserve-root";
+    options_map["deltree"] = opts;
+    opts.clear();
+    //dir options, most do not have anythin similar in bash
+    opts["/P"] = " ";
+    opts["/p"] = " ";
+    opts["/W"] = "-C";
+    opts["/w"] = "-C";
+    opts["/A"] = " ";
+    opts["/a"] = " ";
+    opts["/o"] = " ";
+    opts["/O"] = " ";
+    opts["/S"] = "-R";
+    opts["/s"] = "-R";
+    opts["/B"] = " ";
+    opts["/b"] = " ";
+    opts["/L"] = " ";
+    opts["/l"] = " ";
+    opts["/Y"] = " ";
+    opts["/Y"] = " ";
+    opts["/4"] = " ";
+    options_map["dir"] = opts;
+    opts.clear();
+    //find options
+    opts["/C"] = "-c";
+    opts["/c"] = "-c";
+    opts["/I"] = "-i";
+    opts["/i"] = "-i";
+    opts["/N"] = "-n";
+    opts["/n"] = "-n";
+    opts["/V"] = "-v";
+    opts["/v"] = "-v";
+    options_map["find"] = opts;
+    opts.clear();
+    
+}
+
+options opts;
+
+bool translate_options(std::vector<std::string>& options_list, std::string name){
+    
+    std::vector<std::string> orig_opts;
+    std::map<std::string, std::string> opts_map;
+    std::string opt;
+    opts_map = opts.options_map[name];
+
+    orig_opts = options_list;
+    options_list.clear();
+
+    for(unsigned int i = 0; i < orig_opts.size(); ++i){
+        if( opts_map.find(orig_opts[i]) == opts_map.end()) return false;
+                
+        options_list.push_back(opts_map[orig_opts[i]]);
+    }
+   return true;
+
 }

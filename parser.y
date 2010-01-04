@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include "semantic.h"
 #include "command.h"
+#include "codegen.h"
 #include <stack>
 #include <string>
 #include <vector>
@@ -18,6 +19,7 @@ int yyparse(void);
 int yylex(void);
 int yyerror(char *s);    
 void print_symbol(const char *string);
+void trans_opts(char *name);
 void convert_path(char *string);
 std::stack<command*> parents;
 program progrm;
@@ -255,6 +257,7 @@ copy_command : COPY path path {
                   command* copy_command = new command("copy", line);
                   copy_command->add_string((char *)$3);
                   copy_command->add_string((char *)$4);
+                  trans_opts("copy");
                   copy_command->add_options(option_list);
                   $$ = long(copy_command);
                     
@@ -268,8 +271,12 @@ del_command : DEL path {
                   $$ = long(del_command);
               }
             | DEL option_list  path {
+                   trans_opts("del");
                    print_symbol("del_commandi option_list");
-                   $$ = long(new command("del", line));
+                   command* del_command = new command("del", line);
+                   del_command->add_string((char *) $3);
+                   del_command->add_options(option_list);
+                   $$ = long(del_command);
               }
             ;
 
@@ -282,6 +289,7 @@ deltree_command : DELTR path {
                 | DELTR option_list path {
                       print_symbol("deltree_command options path");
                       command* deltree_command = new command("deltree", line);
+                      trans_opts("deltree");
                       deltree_command->add_options(option_list);
                       deltree_command->add_string((char *)$3);
                       $$ = long(deltree_command);
@@ -296,6 +304,8 @@ dir_command : DIR {
             | DIR option_list {
                   print_symbol("dir_command paramter_list");
                   command* dir_command = new command("dir", line);
+                  trans_opts("dir");
+                  dir_command->add_options(option_list);
                   $$ = long(dir_command);
               }
             | DIR path {
@@ -307,6 +317,8 @@ dir_command : DIR {
             | DIR option_list path {
                   print_symbol("dir_command option_list path");
                   command* dir_command = new command("dir", line);
+                  trans_opts("dir");
+                  dir_command->add_options(option_list);
                   $$ = long(dir_command);
               }
             ;
@@ -327,8 +339,10 @@ find_command : FIND string path {
              | FIND option_list string path {
                    print_symbol("find_command option_list path");
                    command* find_command = new command("find",line);
-                   find_command->add_string((char *)$2);
                    find_command->add_string((char *)$3);
+                   find_command->add_string((char *)$4);
+                   trans_opts("find");
+                   find_command->add_options(option_list);
                    $$ = long(find_command);
                }
              ;
@@ -608,6 +622,11 @@ string : STRING {
 
 %%
 
+//simmple wrapper for translate_options for error reporting
+void trans_opts(char *name){
+    if(!translate_options(option_list,name)) yyerror("Unknown command option");
+}
+
 int yyerror(char *s) {
     fprintf(stderr, "\nerror: (%d): %s\n", line, s);
     error = 1;
@@ -618,8 +637,7 @@ int main(int argc, char *argv[]) {
     int opt;
     while ((opt = getopt(argc, argv, "d")) != -1) {
         switch (opt) {
-            case 'd':
-                debug = 1;
+            case 'd':debug = 1;
                 break;
         }
     }
