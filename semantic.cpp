@@ -315,7 +315,7 @@ block recursive_conv_goto(command* parent, program* shared_program) {
     // MULTIJUMPS
     // now if there are any remaining child_labels and corresponding jumps enclose it all in a big while loop and put ifs inside
     // TODO ACTUALLY DO IT :P
-    if (!child_labels.empty()) {
+    if (!child_jumps.empty() || !child_labels.empty()) {
         std::vector<block>::iterator while_begin;
         std::vector<int> jumps_out;
         for (std::vector<block>::iterator i = child_blocks.begin(); 
