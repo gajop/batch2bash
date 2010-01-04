@@ -511,6 +511,8 @@ void program::index_jumps_labels() {
             if (current->com->get_name() == "label") {
                 labels.add_label(current->com->get_argument(0).value,
                             current->com->get_line());
+                label& lbl = labels.get_label(current->com->get_argument(0).value);
+                lbl.comm = current->com;
             } else if (current->com->get_name() == "goto") {
                 jumps.jumps.push_back(
                         jump(current->com->get_argument(0).value,
