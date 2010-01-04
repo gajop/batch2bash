@@ -1,7 +1,7 @@
 LEX_SRC = scanner.l
 YACC_SRC = parser.y
 CC = g++
-CFLAGS = -Wno-write-strings -g -Wall
+CFLAGS = -Wno-write-strings -g -Wall -Wextra -pedantic -std=c++98 -U_FORTIFY_SOURCE
 
 .PHONY: clean
 
