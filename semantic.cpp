@@ -14,6 +14,7 @@ struct jump {
     int line;
     jump(const std::string& label, unsigned line) : label(label), line(line) { 
         var_set = false;
+        predicate_command = NULL;
     }
     friend int operator <(const jump& lhs, const jump& rhs);
     friend int operator ==(const jump& lhs, const jump& rhs);
@@ -35,7 +36,9 @@ public:
     std::string name;
     int line;
     command* comm;
-    label(const std::string& name, int line) : name(name), line(line) {}
+    label(const std::string& name, int line) : name(name), line(line) {
+        comm = NULL;
+    }
 	friend int operator <(const label& lhs, const label& rhs);
 	friend int operator ==(const label& lhs, const label& rhs);
 };
