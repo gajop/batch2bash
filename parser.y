@@ -14,6 +14,15 @@
 #include <string>
 #include <vector>
 
+#define MAXBUFF 256 
+
+extern int line;
+extern int debug;
+extern int error;
+
+std::vector<std::string> option_list;
+std::stack<command*> parents;
+program progrm;
 
 int yyparse(void);
 int yylex(void);
@@ -21,12 +30,8 @@ int yyerror(char *s);
 void print_symbol(const char *string);
 void trans_opts(char *name);
 void convert_path(char *string);
-std::stack<command*> parents;
-program progrm;
-extern int line;
-extern int debug;
-extern int error;
-std::vector<std::string> option_list;
+void strtolower(char *string);
+
 
 %}
 
@@ -76,7 +81,7 @@ std::vector<std::string> option_list;
 %token ATTRIB //makes no sence translating it 
 %token CD
 %token CLS
-%token COMP // binary diff ? 
+%token COMP  
 %token COPY
 %token DEL
 %token DELTR
@@ -142,55 +147,55 @@ command : normal_command { $$ = $1; }
 silent_command : NOECHO normal_command { $$ = $2; }
                ;
 
-normal_command : compound_command { $$ = $1; }
-               | echo_command { $$ = $1; }
-               | rem_command { $$ = $1; }
-               | choice_command { $$ = $1; }
-               | if_command { $$ = $1; }
-               | for_command { $$ = $1; }
-               | goto_command { $$ = $1; }
-               | cls_command { $$ = $1; }
-               | shift_command { $$ = $1; }
-               | label { $$ = $1; }
-               | del_command { $$ = $1; }
-               | deltree_command { $$ = $1; }
-               | call_command { $$ = $1; }
-               | set_command { $$ = $1; }
-               | cd_command { $$ = $1; }
-               | pause_command { $$ = $1; }
-               | dir_command { $$ = $1; }
-               | exit_command { $$ = $1; }
-               | find_command { $$ = $1; }
-               | mkdir_command { $$ = $1; }
-               | more_command { $$ = $1; }
-               | move_command { $$ = $1; }
-               | drive_command { $$ = $1; }
-               | path_command { $$ = $1; }
-               | fc_command { $$ = $1; }
-               | date_command { $$ = $1; }
-               | time_command { $$ = $1; }
-               | copy_command { $$ = $1; }
-               | sort_command {$$ = $1; }
+normal_command : compound_command   { $$ = $1; }
+               | echo_command       { $$ = $1; }
+               | rem_command        { $$ = $1; }
+               | choice_command     { $$ = $1; }
+               | if_command         { $$ = $1; }
+               | for_command        { $$ = $1; }
+               | goto_command       { $$ = $1; }
+               | cls_command        { $$ = $1; }
+               | shift_command      { $$ = $1; }
+               | label              { $$ = $1; }
+               | del_command        { $$ = $1; }
+               | deltree_command    { $$ = $1; }
+               | call_command       { $$ = $1; }
+               | set_command        { $$ = $1; }
+               | cd_command         { $$ = $1; }
+               | pause_command      { $$ = $1; }
+               | dir_command        { $$ = $1; }
+               | exit_command       { $$ = $1; }
+               | find_command       { $$ = $1; }
+               | mkdir_command      { $$ = $1; }
+               | more_command       { $$ = $1; }
+               | move_command       { $$ = $1; }
+               | drive_command      { $$ = $1; }
+               | path_command       { $$ = $1; }
+               | fc_command         { $$ = $1; }
+               | date_command       { $$ = $1; }
+               | time_command       { $$ = $1; }
+               | copy_command       { $$ = $1; }
+               | sort_command       { $$ = $1; }
                ;
 
 
 //not sure this is ok but werkz for now
 redir_command : command REDIRECT path {
                     print_symbol("redirect command");
-                    char redir[256];
+                    char redir[MAXBUFF];
                     switch($2) {
-                        case W: snprintf(redir,256,"> %s",(char *)$3); break;
-                        case A: snprintf(redir,256,">> %s",(char *)$3); break;
-                        case R: snprintf(redir,256,"< %s",(char *)$3); break;
+                        case W: snprintf( redir, MAXBUFF-1, "> %s", (char *)$3); break;
+                        case A: snprintf( redir, MAXBUFF-1, ">> %s",(char *)$3); break;
+                        case R: snprintf( redir, MAXBUFF-1, "< %s", (char *)$3); break;
                     }
                     ((command *)$1)->add_string(redir);
                     $$ = $1;
                 }
               ;
 
-newline_list : command_list { $$ = $1; }
-             | NEWLINE command_list { $$ = $2; }
-             | command_list NEWLINE { $$ = $1; }
+newline_list : command_list                 { $$ = $1; }
+             | NEWLINE command_list         { $$ = $2; }
+             | command_list NEWLINE         { $$ = $1; }
              | NEWLINE command_list NEWLINE { $$ = $2; }
              ;
 
@@ -207,8 +212,8 @@ compound_command : LPAREN {
 
 echo_command : ECHO {
                    print_symbol("echo_command"); 
-                   char echo[256];
-                   snprintf(echo,255,"\"%s\"",(char *)$1);
+                   char echo[MAXBUFF];
+                   snprintf( echo, MAXBUFF-1, "\"%s\"", (char *)$1);
                    command* echo_command = new command("echo", line);
                    echo_command->add_string(echo);
                    $$ = long(echo_command);
@@ -231,8 +236,8 @@ path_command : PATH {
              | PATH path {
                     print_symbol("path_command path");
                     command* path_command = new command("path", line);
-                    char env[256];
-                    snprintf(env,255,"PATH=\"%s\"",(char *)$2);
+                    char env[MAXBUFF];
+                    snprintf( env, MAXBUFF-1, "PATH=\"%s\"", (char *)$2);
                     path_command->add_string(env);
                     $$ = long(path_command);
                 }
@@ -240,7 +245,7 @@ path_command : PATH {
     
 rem_command : REM {
                   print_symbol("rem_command");      
-                  command* rem_command = new command("rem",line);
+                  command* rem_command = new command("rem", line);
                   rem_command->add_string((char *)$1);
                   $$ = long(rem_command);
                 }
@@ -255,13 +260,12 @@ copy_command : COPY path path {
                }
              | COPY option_list path path {
                   print_symbol("copy_command options_list");
+                  trans_opts("copy");
                   command* copy_command = new command("copy", line);
                   copy_command->add_string((char *)$3);
                   copy_command->add_string((char *)$4);
-                  trans_opts("copy");
                   copy_command->add_options(option_list);
                   $$ = long(copy_command);
-                    
                }
              ;
 
@@ -272,8 +276,8 @@ del_command : DEL path {
                   $$ = long(del_command);
               }
             | DEL option_list  path {
-                   trans_opts("del");
                    print_symbol("del_commandi option_list");
+                   trans_opts("del");
                    command* del_command = new command("del", line);
                    del_command->add_string((char *) $3);
                    del_command->add_options(option_list);
@@ -289,8 +293,8 @@ deltree_command : DELTR path {
                   }
                 | DELTR option_list path {
                       print_symbol("deltree_command options path");
-                      command* deltree_command = new command("deltree", line);
                       trans_opts("deltree");
+                      command* deltree_command = new command("deltree", line);
                       deltree_command->add_options(option_list);
                       deltree_command->add_string((char *)$3);
                       $$ = long(deltree_command);
@@ -304,8 +308,8 @@ dir_command : DIR {
               }
             | DIR option_list {
                   print_symbol("dir_command paramter_list");
-                  command* dir_command = new command("dir", line);
                   trans_opts("dir");
+                  command* dir_command = new command("dir", line);
                   dir_command->add_options(option_list);
                   $$ = long(dir_command);
               }
@@ -317,8 +321,8 @@ dir_command : DIR {
               }
             | DIR option_list path {
                   print_symbol("dir_command option_list path");
-                  command* dir_command = new command("dir", line);
                   trans_opts("dir");
+                  command* dir_command = new command("dir", line);
                   dir_command->add_options(option_list);
                   $$ = long(dir_command);
               }
@@ -339,10 +343,10 @@ find_command : FIND string path {
                }
              | FIND option_list string path {
                    print_symbol("find_command option_list path");
+                   trans_opts("find");
                    command* find_command = new command("find",line);
                    find_command->add_string((char *)$3);
                    find_command->add_string((char *)$4);
-                   trans_opts("find");
                    find_command->add_options(option_list);
                    $$ = long(find_command);
                }
@@ -359,18 +363,19 @@ mkdir_command : MKDIR path {
 sort_command : SORT {
                 print_symbol("sort_command");
                 $$ = long(new command("sort",line));
-                }
+               }
              | SORT option_list {
                 print_symbol("sort_command option_list");
-                command* sort_command = new command("sort",line);
                 trans_opts("sort");
+                command* sort_command = new command("sort",line);
                 sort_command->add_options(option_list);
                 $$ = long(sort_command);
-                }
+               }
+             ;
 
 more_command : MORE {
-                print_symbol("more_command");
-                $$ = long(new command("more",line));
+                  print_symbol("more_command");
+                  $$ = long(new command("more",line));
                }  
              | MORE filename {
                    print_symbol("more_command filename");
@@ -380,9 +385,9 @@ more_command : MORE {
                }
              | MORE option_list filename {
                    print_symbol("more_command option_list filename");
+                   trans_opts("more");
                    command* more_command = new command("more", line);
                    more_command->add_string((char *)$3);
-                   trans_opts("more");
                    more_command->add_options(option_list);
                    $$ = long(more_command);
                }
@@ -397,10 +402,10 @@ move_command : MOVE path path {
                }
              | MOVE option_list path path {
                    print_symbol("move_command path path");
+                   trans_opts("move");
                    command* move_command = new command("move",line);
                    move_command->add_string((char *)$3);
                    move_command->add_string((char *)$4);
-                   trans_opts("move");
                    move_command->add_options(option_list);
                    $$ = long(move_command);
                }
@@ -515,8 +520,8 @@ set_command : SET {
             | SET variable {
                   print_symbol("set_command");
                   command* set_command = new command("echo",line);
-                  char temp[256];
-                  snprintf(temp,255,"$%s",(char *)$2);
+                  char temp[MAXBUFF];
+                  snprintf(temp,MAXBUFF-1,"$%s",(char *)$2);
                   set_command->add_string(temp);
                   $$ = long(set_command);
               }
@@ -529,16 +534,16 @@ set_command : SET {
             | SET variable ASSIGN_OP string {
                   print_symbol("set_command id = string");
                   command* set_command = new command("set",line);
-                  char temp[256];
-                  snprintf(temp,255,"%s=%s",(char *)$2,(char *)$4);
+                  char temp[MAXBUFF];
+                  snprintf(temp, MAXBUFF-1, "%s=%s", (char *)$2, (char *)$4);
                   set_command->add_string(temp);
                   $$ = long(set_command);
               }
             | SET option_list variable ASSIGN_OP string {
                   print_symbol("set_command option_list id = string");
                   command* set_command = new command("set",line);
-                  char temp[256];
-                  snprintf(temp,255,"%s=%s",(char *)$3,(char *)$5);
+                  char temp[MAXBUFF];
+                  snprintf( temp, MAXBUFF-1, "%s=%s", (char *)$3, (char *)$5);
                   set_command->add_string(temp);
                   trans_opts("set");
                   set_command->add_options(option_list);
@@ -559,8 +564,8 @@ cd_command : CD {
            | CD DRIVE_ROOT BACKSLASH { //exception , doesn't do anything 
                  print_symbol("cd_command drive_root\\");
                  command* cd_command = new command("cd",line);
-                 char drv[256]; 
-                 snprintf(drv,255,"%s/",(char *)$2);
+                 char drv[MAXBUFF]; 
+                 snprintf(drv, MAXBUFF-1, "%s/", (char *)$2);
                  cd_command->add_string(drv);
                  $$ = long(cd_command);
              }
@@ -584,7 +589,7 @@ fc_command : FC path path {
                  command* fc_command = new command("fc",line);
                  fc_command->add_string((char *)$2);
                  fc_command->add_string((char *)$3);
-//                 trans_opts("fc");
+//                 trans_opts("fc"); //not done!!!
                  fc_command->add_options(option_list);
                  $$ = long(fc_command);
              }
@@ -596,8 +601,8 @@ date_command : DATE {
                }
              | DATE option_list {
                    print_symbol("date_command arguments");
-                   command* date_command = new command("date",line);
                    trans_opts("date");
+                   command* date_command = new command("date",line);
                    date_command->add_options(option_list);
                    $$ = long(date_command);
                }
@@ -609,8 +614,8 @@ time_command : TIME {
                }
              | TIME option_list {
                    print_symbol("time_command arguments");
-                   command* time_command = new command("time",line);
                    trans_opts("time");
+                   command* time_command = new command("time",line);
                    time_command->add_options(option_list);
                    $$ = long(time_command);
                }
@@ -631,15 +636,19 @@ label : COLON ID {
       ;
 
 variable : PERCENT ID PERCENT {
-               $$ = $2; //hmm
+               $$ = $2; 
            }
          ;
 
 option_list : OPTION { 
                   option_list.clear(); 
+                  strtolower((char *)$1);
+                  printf("!!!!!!!!!!!!!options lower:%s\n ",(char *)$1);
                   option_list.push_back((char *)($1)); 
               }
             | option_list OPTION {
+                  strtolower((char *)$2);
+                  printf("!!!!!!!!!!!!!options lower:%s\n ",(char *)$2);
                   option_list.push_back((char *)($2));  
               }
             ; 
@@ -648,7 +657,7 @@ filename : ID {
                $$ = $1;
            }
          | ID DOT ID {
-               sprintf((char *)$$,"%s.%s",(char *)$1,(char *)$3);
+               sprintf((char *)$$, "%s.%s", (char *)$1, (char *)$3);
            }
          ;
 
@@ -659,26 +668,28 @@ path : PATH_LINE {
        }
      | DRIVE_ROOT BACKSLASH PATH_LINE {
            convert_path((char *)$3);
-           sprintf((char *)$$,"%s/%s",(char *)$1,(char *)$3);
+           sprintf((char *)$$, "%s/%s", (char *)$1, (char *)$3);
        }
-     | DRIVE_ROOT BACKSLASH filename {
-           sprintf((char *)$$,"%s/%s",(char *)$1,(char *)$3);
-       }
-     | filename {
-           $$ = $1;
-       }
+     | DRIVE_ROOT BACKSLASH filename { sprintf((char *)$$, "%s/%s", (char *)$1, (char *)$3); }
+     | filename { $$ = $1;  }
      ;   
 
-string : STRING {
-             $$ = $1;
-         } 
-       | ID {
-             $$ = $1;
-         }
+string : STRING { $$ = $1; } 
+       | ID     { $$ = $1; }
        ;
           
 
 %%
+
+void strtolower(char *string){
+    int i;
+    for(i = 0; string[i] != '\0'; i++){
+        if(isalpha(string[i])){
+            string[i] = tolower(string[i]);
+        }
+    }
+}
+
 
 //simmple wrapper for translate_options for error reporting
 void trans_opts(char *name){
@@ -713,9 +724,7 @@ int main(int argc, char *argv[]) {
 
 
 void print_symbol(const char *string) {
-    if (debug) {
-        fprintf(stdout, "\t%s %d\n", string,line);
-    }
+    if (debug) fprintf(stdout, "\t%s %d\n", string,line);
 }
 
 void convert_path(char *path) {

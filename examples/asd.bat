@@ -19,6 +19,6 @@ pause
 path aasd\asd\asd\
 path
 path ;
-copy /a asd asd 
-deltr /Z:SERIOUSLY /Y asd
+copy /A asd asd 
+deltr /z:seriously /Y asd
 more  asd.txt

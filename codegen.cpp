@@ -134,109 +134,74 @@ options::options(){
     std::map<std::string,std::string> opts;
     //del options
     opts["/p"] = "-i";
-    opts["/P"] = "-i";
-    opts["/V"] = " ";
     opts["/v"] = " ";
     options_map["del"] = opts;
     opts.clear();
     //copy options , most make no sense,  or are a default  behaviour 
-    opts["/A"] = " ";
     opts["/a"] = " ";
     opts["/b"] = " ";
-    opts["/B"] = " ";
-    opts["/V"] = " ";
     opts["/v"] = " ";
-    opts["/Y"] = " ";
     opts["/y"] = " ";
-    opts["/-Y"]= "-i"; 
     opts["/-y"]= "-i";
     options_map["copy"] = opts;
     opts.clear();
     //deltree options
-    opts["/Y"] = "-f";
     opts["/y"] = "-f";
-    opts["/V"] = "-v";
     opts["/v"] = "-v";
     opts["/d"] = "-v";
-    opts["/D"] = "-v";
     opts["/x"] = "--version";
-    opts["/X"] = "--version";
-    opts["/Z:SERIOUSLY"] = "--no-preserve-root";
+    opts["/z:seriously"] = "--no-preserve-root";
     options_map["deltree"] = opts;
     opts.clear();
     //dir options, most do not have anythin similar in bash
-    opts["/P"] = " ";
     opts["/p"] = " ";
-    opts["/W"] = "-C";
     opts["/w"] = "-C";
-    opts["/A"] = " ";
     opts["/a"] = " ";
     opts["/o"] = " ";
-    opts["/O"] = " ";
-    opts["/S"] = "-R";
     opts["/s"] = "-R";
-    opts["/B"] = " ";
     opts["/b"] = " ";
-    opts["/L"] = " ";
     opts["/l"] = " ";
-    opts["/Y"] = " ";
-    opts["/Y"] = " ";
+    opts["/y"] = " ";
     opts["/4"] = " ";
     options_map["dir"] = opts;
     opts.clear();
     //find options
-    opts["/C"] = "-c";
     opts["/c"] = "-c";
-    opts["/I"] = "-i";
     opts["/i"] = "-i";
-    opts["/N"] = "-n";
     opts["/n"] = "-n";
-    opts["/V"] = "-v";
     opts["/v"] = "-v";
     options_map["find"] = opts;
     opts.clear();
     //more options 
-    opts["/T4"] = " ";
     opts["/t4"] = " ";
     options_map["more"] = opts;
     opts.clear();
     //move options
-    opts["/Y"] = "-f";
     opts["/y"] = "-f";
-    opts["/-Y"]= " ";
     opts["/-y"]= " ";
-    opts["/V"] = " ";
     opts["/v"] = " ";
     options_map["move"] = opts;
     opts.clear();
     //fc options NOT DONE!
-    opts["/A"] = " ";
     opts["/a"] = " ";
     options_map["fc"] = opts;
     opts.clear();
     //date options
-    opts["/D"] = " ";
     opts["/d"] = " ";
     options_map["date"] = opts;
     opts.clear();
     //time options
-    opts["/T"] = " ";
     opts["/t"] = " ";
     options_map["time"] = opts;
     opts.clear();
     //sort oprions
-    opts["/R"] = "-r";
     opts["/r"] = "-r";
-    opts["/N"] = " ";
     opts["/n"] = " ";
     options_map["sort"] = opts;
     opts.clear();
     //set options 
-    opts["/C"] = " ";
     opts["/c"] = " ";
-    opts["/P"] = " ";
     opts["/p"] = " ";
-    opts["/U"] = " ";
     opts["/u"] = " ";
     options_map["set"] = opts;
     opts.clear();

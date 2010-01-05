@@ -3,7 +3,6 @@
 #include <string.h>
 #include "y.tab.h"
 #include "defs.h"
-#define DEBUG 1
 
 
 extern YYSTYPE yylval;
@@ -22,102 +21,103 @@ newline             \n|\n\r
 
 %%
 
-echo[[:blank:]"."][^\n)^>^((>>)|(<))]*   { yylval = (long)strdup(yytext + 5); if (DEBUG) print_token("ECHO\n"); return ECHO; }
+echo[[:blank:]"."][^\n)^>^((>>)|(<))]*   { yylval = (long)strdup(yytext + 5);  print_token("ECHO"); return ECHO; }
+(rem[\t ]+.*)|rem       {  yylval = (long)strdup(yytext + 3);  print_token("REM"); return REM;      }
+"/"[a-zA-Z0-9|?|:|-]+   {  yylval = (long)strdup(yytext);  print_token("OPTION"); return OPTION; } 
+call                    {  print_token("CALL"); return CALL;                                        }  
+choice                  {  print_token("CHOICE"); return CHOICE;                                    }
+con                     {  print_token("CONSOLE"); return CONSOLE;                                  }
+else                    {  print_token("ELSE"); return ELSE;                                        }  
+errorlevel              {  print_token("ERRORLEVEL"); return ERRORLEVEL;                            }
+exist                   {  print_token("EXIST"); return EXIST;                                      }
+if                      {  print_token("IF"); return IF;                                            }
+for                     {  print_token("FOR"); return FOR;                                          }
+in                      {  print_token("IN"); return IN;                                            }
+do                      {  print_token("DO"); return DO;                                            }
+goto                    {  print_token("GOTO"); return GOTO;                                        }
+not                     {  print_token("NOT"); return NOT;                                          }
+nul                     {  print_token("NUL"); return NUL;                                          }
+off                     {  print_token("OFF"); return OFF;                                          }
+on                      {  print_token("ON"); return ON;                                            }
+pause                   {  print_token("PAUSE"); return PAUSE;                                      }
+set                     {  print_token("SET"); return SET;                                          }
+shift                   {  print_token("SHIFT"); return SHIFT;                                      }
+sgn                     {  print_token("SIGN"); return SIGN;                                        }
+equ                     {  yylval = EQ;  print_token("RELOP"); return RELOP;                        }
+neq                     {  yylval = NE;  print_token("RELOP"); return RELOP;                        }
+lss                     {  yylval = LT;  print_token("RELOP"); return RELOP;                        }
+leq                     {  yylval = LE;  print_token("RELOP"); return RELOP;                        }
+gtr                     {  yylval = GT;  print_token("RELOP"); return RELOP;                        }
+geq                     {  yylval = GE;  print_token("RELOP"); return RELOP;                        }
+">"                     {  yylval = W;  print_token("REDIRECT"); return REDIRECT;                   }
+">>"                    {  yylval = A;  print_token("REDIRECT"); return REDIRECT;                   }
+"<"                     {  yylval = R;  print_token("REDIRECT"); return REDIRECT;                   }
+"=="                    {  yylval = EQ;  print_token("STROP"); return STROP;                        }
+"!==!"                  {  yylval = NE;  print_token("STROP"); return STROP;                        }
+"!"                     {  yylval = NEG;  print_token("STROP"); return STROP;                       }
+"|"                     {  print_token("PIPE"); return PIPE;                                        }
+"@"                     {  print_token("NOECHO"); return NOECHO;                                    }
+"*"                     {  yylval = MANY;  print_token("WILDCARD"); return WILDCARD;                }
+"?"                     {  yylval = ONE;  print_token("WILDCARD"); return WILDCARD;                 }
+"%"                     {  print_token("PERCENT"); return PERCENT;                                  }
+"("                     {  print_token("LPAREN"); return LPAREN;                                    }   
+")"                     {  print_token("RPAREN"); return RPAREN;                                    }   
+"."                     {  print_token("DOT");  return DOT;                                         }
+"="                     {  print_token("ASSIGN_OP"); return ASSIGN_OP;                              }
 
-(rem[\t ]+.*)|rem                  { yylval = (long)strdup(yytext + 3); if (DEBUG) print_token("REM\n"); return REM; }
+assign                  {  print_token("ASSIGN"); return ASSIGN;                                    }
+attrib                  {  print_token("ATTRIB"); return ATTRIB;                                    }
+cd                      {  print_token("CD"); return CD;                                            }          
+chdir                   {  print_token("CHDIR"); return CD;                                         }
+cls                     {  print_token("CLS"); return CLS;                                          }
+comp                    {  print_token("COMP"); return COMP;                                        }
+copy                    {  print_token("COPY"); return COPY;                                        }
+del                     {  print_token("DEL"); return DEL;                                          }
+deltr                   {  print_token("DELTR"); return DELTR;                                      }
+date		        	{  print_token("DATE"); return DATE;                                        }
+dir                     {  print_token("DIR"); return DIR;                                          }
+erase                   {  print_token("ERASE"); return DEL;                                        }
+exit                    {  print_token("EXIT"); return EXIT;                                        }
+fc                      {  print_token("FC"); return FC;                                            }
+find                    {  print_token("FIND"); return FIND;                                        }
+md                      {  print_token("MD"); return MKDIR;                                         }
+mkdir                   {  print_token("MKDIR"); return MKDIR;                                      }
+more                    {  print_token("MORE"); return MORE;                                        }
+move                    {  print_token("MOVE"); return MOVE;                                        }
+path                    {  print_token("PATH"); return PATH;                                        }
+ren                     {  print_token("REN"); return REN;                                          }
+rd                      {  print_token("RD"); return RD;                                            }
+rmdir                   {  print_token("RMDIR"); return RMDIR;                                      }
+sort                    {  print_token("SORT"); return SORT;                                        }
+time                    {  print_token("TIME"); return TIME;                                        }
+type                    {  print_token("TYPE"); return TYPE;                                        }
+xcopy                   {  print_token("XCOPY"); return XCOPY;                                      }
 
-"/"[a-zA-Z0-9|?|:|-]+                       { yylval = (long)strdup(yytext); if (DEBUG) print_token("ARGUMENTS\n"); return OPTION; } 
-call                    { if (DEBUG) print_token("CALL\n"); return CALL; }
-choice                  { if (DEBUG) print_token("CHOICE\n"); return CHOICE; }
-con                     { if (DEBUG) print_token("CONSOLE\n"); return CONSOLE; }
-else                    { if (DEBUG) print_token("ELSE\n"); return ELSE; }
-errorlevel              { if (DEBUG) print_token("ERRORLEVEL\n"); return ERRORLEVEL; }
-exist                   { if (DEBUG) print_token("EXIST\n"); return EXIST; }
-if                      { if (DEBUG) print_token("IF\n"); return IF; }
-for                     { if (DEBUG) print_token("FOR\n"); return FOR; }
-in                      { if (DEBUG) print_token("IN\n"); return IN; }
-do                      { if (DEBUG) print_token("DO\n"); return DO; }
-goto                    { if (DEBUG) print_token("GOTO\n"); return GOTO; }
-not                     { if (DEBUG) print_token("NOT\n"); return NOT; }
-nul                     { if (DEBUG) print_token("NUL\n"); return NUL; }
-off                     { if (DEBUG) print_token("OFF\n"); return OFF; }
-on                      { if (DEBUG) print_token("ON\n"); return ON; }
-pause                   { if (DEBUG) print_token("PAUSE\n"); return PAUSE; }
-set                     { if (DEBUG) print_token("SET\n"); return SET; }
-shift                   { if (DEBUG) print_token("SHIFT\n"); return SHIFT; }
-sgn                     { if (DEBUG) print_token("SIGN\n"); return SIGN; }
-equ                     { yylval = EQ; if (DEBUG) print_token("RELOP\n"); return RELOP; }
-neq                     { yylval = NE; if (DEBUG) print_token("RELOP\n"); return RELOP; }
-lss                     { yylval = LT; if (DEBUG) print_token("RELOP\n"); return RELOP; }
-leq                     { yylval = LE; if (DEBUG) print_token("RELOP\n"); return RELOP; }
-gtr                     { yylval = GT; if (DEBUG) print_token("RELOP\n"); return RELOP; }
-geq                     { yylval = GE; if (DEBUG) print_token("RELOP\n"); return RELOP; }
-">"                     { yylval = W; if (DEBUG) print_token("REDIRECT\n"); return REDIRECT; }
-">>"                    { yylval = A; if (DEBUG) print_token("REDIRECT\n"); return REDIRECT; }
-"<"                     { yylval = R; if (DEBUG) print_token("REDIRECT\n"); return REDIRECT; }
-"=="                    { yylval = EQ; if (DEBUG) print_token("STROP\n"); return STROP; }
-"!==!"                  { yylval = NE; if (DEBUG) print_token("STROP\n"); return STROP; }
-"!"                     { yylval = NEG; if (DEBUG) print_token("STROP\n"); return STROP; }
-"|"                     { if (DEBUG) print_token("PIPE\n"); return PIPE; }
-"@"                     { if (DEBUG) print_token("NOECHO\n"); return NOECHO; }
-"*"                     { yylval = MANY; if (DEBUG) print_token("WILDCARD\n"); return WILDCARD; /* hmm */}
-"?"                     { yylval = ONE; if (DEBUG) print_token("WILDCARD\n"); return WILDCARD; /* hmm */}
-"%"                     { if (DEBUG) print_token("PERCENT\n"); return PERCENT; }
-"("                     { if (DEBUG) print_token("LPAREN\n"); return LPAREN; }   
-")"                     { if (DEBUG) print_token("RPAREN\n"); return RPAREN; }   
-"."                     { if (DEBUG) print_token("DOT\n");  return DOT; }
-"="                     { if (DEBUG) print_token("ASSIGN_OP\n"); return ASSIGN_OP; }
+[a-zA-Z]\:              {  print_token("DRIVE_ROOT"); yylval = (long)strdup(yytext); return DRIVE_ROOT;}
+[a-zA-Z0-9]+\\+[a-zA-Z0-9\\]*  {   print_token("PATH_LINE"); yylval = (long)strdup(yytext); return PATH_LINE;}
 
-assign                  { if (DEBUG) print_token("ASSIGN\n"); return ASSIGN; }
-attrib                  { if (DEBUG) print_token("ATTRIB\n"); return ATTRIB; }
-cd                      { if (DEBUG) print_token("CD\n"); return CD; }
-chdir                   { if (DEBUG) print_token("CHDIR\n"); return CD; }
-cls                     { if (DEBUG) print_token("CLS\n"); return CLS; }
-comp                    { if (DEBUG) print_token("COMP\n"); return COMP; }
-copy                    { if (DEBUG) print_token("COPY\n"); return COPY; }
-del                     { if (DEBUG) print_token("DEL\n"); return DEL; }
-deltr                   { if (DEBUG) print_token("DELTR\n"); return DELTR; }
-date			{ if (DEBUG) print_token("DATE\n"); return DATE; }
-dir                     { if (DEBUG) print_token("DIR\n"); return DIR; }
-erase                   { if (DEBUG) print_token("ERASE\n"); return DEL; }
-exit                    { if (DEBUG) print_token("EXIT\n"); return EXIT; }
-fc                      { if (DEBUG) print_token("FC\n"); return FC; }
-find                    { if (DEBUG) print_token("FIND\n"); return FIND; }
-md                      { if (DEBUG) print_token("MD\n"); return MKDIR; }
-mkdir                   { if (DEBUG) print_token("MKDIR\n"); return MKDIR; }
-more                    { if (DEBUG) print_token("MORE\n"); return MORE; }
-move                    { if (DEBUG) print_token("MOVE\n"); return MOVE; }
-path                    { if (DEBUG) print_token("PATH\n"); return PATH; }
-ren                     { if (DEBUG) print_token("REN\n"); return REN; }
-rd                      { if (DEBUG) print_token("RD\n"); return RD; }
-rmdir                   { if (DEBUG) print_token("RMDIR\n"); return RMDIR; }
-sort                    { if (DEBUG) print_token("SORT\n"); return SORT; }
-time                    { if (DEBUG) print_token("TIME\n"); return TIME; }
-type                    { if (DEBUG) print_token("TYPE\n"); return TYPE; }
-xcopy                   { if (DEBUG) print_token("XCOPY\n"); return XCOPY; }
+{letter}({letter}|{digit})*    { yylval = (long)strdup(yytext);  print_token("ID\n"); return ID;     }
+{digit}+                       {  print_token("NUMBER"); return NUMBER;                         }
+":"                            {  print_token("COLON"); return COLON;                           }
+";"                            {  print_token("SEMICOLON"); return SEMICOLON;                   }
+"/"                            {  print_token("SLASH"); return SLASH;                           }
+"\\"                           {  print_token("BACKSLASH"); return BACKSLASH;                   }
+[[:blank:]]+                   {                                                                }
 
-[a-zA-Z]\:          { if (DEBUG) print_token("DRIVE_ROOT\n"); yylval = (long)strdup(yytext); return DRIVE_ROOT;}
-[a-zA-Z0-9]+\\+[a-zA-Z0-9\\]*	    {  if (DEBUG) print_token("PATH_LINE\n"); yylval = (long)strdup(yytext); return PATH_LINE;}
-
-{letter}({letter}|{digit})*         { yylval = (long)strdup(yytext); if (DEBUG) print_token("ID\n"); return ID; }
-{digit}+                            { if (DEBUG) print_token("NUMBER\n"); return NUMBER; }
-":"                                 { if (DEBUG) print_token("COLON\n"); return COLON; }
-";"                                 { if (DEBUG) print_token("SEMICOLON\n"); return SEMICOLON; }
-"/"                                 { if (DEBUG) print_token("SLASH\n"); return SLASH; }
-"\\"                                { if (DEBUG) print_token("BACKSLASH\n"); return BACKSLASH; }
-[[:blank:]]+                        { }
 {newline}({newline}|[[:blank:]])*   { for (int i = 0; yytext[i] != '\0'; i++) { 
                                           if (yytext[i] == '\n') line++;
-                                      }
-                                          if (DEBUG) print_token("NEWLINE\n"); return NEWLINE; }
-\"\%?[a-z0-9[:blank:]]*\"                            {if(DEBUG)print_token("STRING\n");yylval = (long)strdup(yytext); return STRING; }
+                                        }
+                                      print_token("NEWLINE\n"); return NEWLINE; 
+                                    }
+
+\"\%?[a-z0-9[:blank:]]*\"        { print_token("STRING");yylval = (long)strdup(yytext); return STRING; }
 .                                { fprintf(stderr, "\nlexical error: (%d): %c, %d line not currently working :D", line, yytext[0], yytext[0]); error = 1; }
 
 %%
 
 void print_token(const char *string) {
     if (debug) {
-        fprintf(stdout, "%s", string);
+        fprintf(stdout, "%s\n", string);
     }
 }
 int yywrap() {
