@@ -27,10 +27,10 @@ program progrm;
 int yyparse(void);
 int yylex(void);
 int yyerror(char *s);    
-void print_symbol(const char *string);
+void print_symbol(const char *str);
 void trans_opts(char *name);
-void convert_path(char *string);
-void strtolower(char *string);
+void convert_path(char *path);
+void strtolower(char *str);
 
 
 %}
@@ -416,7 +416,11 @@ move_command : MOVE path path {
 
 choice_command : CHOICE {/*default Y/N choice */
                      print_symbol("choce_command");
-                     $$ = long(new command("choice", line));
+                     command *sh_command = new command("sh -c ",line);
+                     std::string var = progrm.new_var();
+                     sh_command->add_string(std::string("\'echo \"Type 1 for yes and 2 for no: \"") + 
+                                                        ";" + "read " + var + ";" + "exit $" + var + "\'");
+                     $$ = long(sh_command);
                  }
                | CHOICE option_list {
                      print_symbol("choce_command option_list");
@@ -681,11 +685,11 @@ string : STRING { $$ = $1; }
 
 %%
 
-void strtolower(char *string){
+void strtolower(char *str){
     int i;
-    for(i = 0; string[i] != '\0'; i++){
-        if(isalpha(string[i])){
-            string[i] = tolower(string[i]);
+    for(i = 0; str[i] != '\0'; i++){
+        if(isalpha(str[i])){
+            str[i] = tolower(str[i]);
         }
     }
 }
@@ -723,8 +727,8 @@ int main(int argc, char *argv[]) {
 }
 
 
-void print_symbol(const char *string) {
-    if (debug) fprintf(stdout, "\t%s %d\n", string,line);
+void print_symbol(const char *str) {
+    if (debug) fprintf(stdout, "\t%s %d\n", str,line);
 }
 
 void convert_path(char *path) {

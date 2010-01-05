@@ -22,3 +22,4 @@ path ;
 copy /A asd asd 
 deltr /z:seriously /Y asd
 more  asd.txt
+choice
