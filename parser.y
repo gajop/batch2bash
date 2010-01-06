@@ -20,6 +20,7 @@
 extern int line;
 extern int debug;
 extern int error;
+extern FILE* yyin;
 
 std::vector<std::string> option_list;
 std::stack<command*> parents;
@@ -27,7 +28,7 @@ program progrm;
 
 int yyparse(void);
 int yylex(void);
-int yyerror(char *s);    
+int yyerror(char *s);
 void print_symbol(const char *str);
 void trans_opts(char *name);
 void convert_path(char *path);
@@ -800,22 +801,54 @@ int yyerror(char *s) {
 
 int main(int argc, char *argv[]) {
     int opt;
-    while ((opt = getopt(argc, argv, "d")) != -1) {
+    bool input, output;
+    std::string input_file, output_file;
+    input = output = false;
+    while ((opt = getopt(argc, argv, "di:o:")) != -1) {
         switch (opt) {
-            case 'd':debug = 1;
+            case 'd':
+                debug = 1;
                 break;
+            case 'i':
+                input = true;
+                input_file = optarg;
+                break;
+            case 'o':
+                output = true;
+                output_file = optarg;
+                break;
+            case '?':
+                switch(optopt) {
+                    case 'i': case 'o':
+                        fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+                        break;
+                        return 1;
+                    default:
+                        fprintf(stderr, "Unexpected option at %c\n", optopt);
+                        break;
+                        return 2;
+                }
+            default: 
+                return 3;
         }
+    }
+    if (!(input && output)) {
+        fprintf(stderr, "Input and output files must be specified\n");
+        return 3;
     }
     command* begin = progrm.get_root();
     parents.push(begin);
+    yyin = fopen(input_file.c_str(), "r");
     yyparse();
+    fclose(yyin);
     if (!error) {
         if (debug != 0 && !error) {
             progrm.print_program_tree();
         }
-        progrm.generate_bash(debug);
+        return progrm.generate_bash(output_file, debug);
+    } else {
+        return error;
     }
-    return error;
 }
 
 

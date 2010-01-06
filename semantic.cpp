@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <stack>
 #include <set>
+#include <fstream>
 #include "utility.hpp"
 
 struct jump { 
@@ -211,8 +212,6 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                     child_labels[label_counter]->jumps.back() ==
                     *child_jumps[jump_counter - 1].front()) {
                 // COND1 SIMPLE* LABEL1 -> COND1 IF!1 SIMPLE* FI!1
-                // prev.top().pos + 1 because we don't want to include cond 
-                // i - 1 because we don't need label anymore
                 unsigned begin = 0, end = 0;
                 // looking for goto/label, there can be only one =)
                 for (unsigned j = 0; j < parent->get_num_children(); ++j) {
@@ -228,11 +227,9 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                 block new_block = generate_hidden_if(child_blocks.begin() + 
                         prev.top().pos + 1, child_blocks.begin() + (i - 1),
                         child_jumps[jump_counter -1].front()->var_name); 
-                // same reasoning for i + 1 here
                 child_blocks.erase(child_blocks.begin() + prev.top().pos + 1, 
                         child_blocks.begin() + i + 1);
                 child_blocks[prev.top().pos] = new_block;
-                // same as above for i + 1
                 parent->remove_children(begin + 1, end);
                 parent->insert_child(begin + 1, new_block.comms.back());
                 i = prev.top().pos;
@@ -271,7 +268,6 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                 comm->add_string(child_jumps[jump_counter].front()->var_name); //check this
                 comm->add_string("=");
                 comm->add_string("1");
-                // i + 1 because we don't want to add label
                 block new_block = generate_hidden_while(child_blocks.begin() + 
                         prev.top().pos + 1, child_blocks.begin() + i,
                        child_jumps[jump_counter].front()->var_name);
@@ -354,7 +350,6 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                 comm->add_string("=");
                 comm->add_string(toString(label_predicate[child_jumps[i][j]->label]));
             }
-        //add this command
         }
         unsigned block_begin = 0;
         bool in_block = true;
@@ -363,7 +358,6 @@ block recursive_conv_goto(command* parent, program* shared_program) {
         comm->add_string(shared_var); //check this
         comm->add_string("=");
         comm->add_string("1");
-//        child_blocks.insert(, comm);
         for (unsigned i = 0; i < child_blocks.size(); ++i) {
             block current = child_blocks[i];
             if (current.type != bCOND && current.type != bLABEL) {
@@ -532,14 +526,14 @@ void program::index_jumps_labels() {
     }
 }
 
-bool program::connect_jumps() { 
+int program::connect_jumps() { 
 	for (std::vector<jump>::iterator i = jumps.jumps.begin();
             i != jumps.jumps.end(); ++i) {
         try {
     		labels.add_jump(*i);
         } catch (std::logic_error& err) {
             fprintf(stderr, "%s\n", err.what());
-            return false;
+            return 1;
         }
     } 
     label_list unused = labels;
@@ -550,27 +544,26 @@ bool program::connect_jumps() {
 			unused.remove_label(i->label);
         } else {
             throw fprintf(stderr, "jump to an unknown label\n");
-            return false;
+            return 2;
         }
     }
 	for (std::vector<label>::iterator i = unused.labels.begin();
             i != unused.labels.end(); ++i) {
         labels.remove_label(i->name);
     }
-    return true;
+    return 0;
 }
 
-bool program::convert_goto() {
+int program::convert_goto() {
     block ret = recursive_conv_goto(root, this);
-    print_vars();
     if (ret.type == bHARD) { 
         fprintf(stderr, "not possible to convert goto");
-        return false;
+        return 1;
     }
-    return true;
+    return 0;
 }
 
-void program::generate_code() {
+std::string program::generate_code() {
     std::stack<tree_frame> traversal_stack; // meh double memory, but hey, just pointers...
     std::vector<command*> parents; 
     parents.push_back(root);
@@ -578,7 +571,7 @@ void program::generate_code() {
     tree_frame* current;
     int level = 0;
     std::string generated_code;
-    printf("#!/bin/bash\n");
+    std::string out =  "#!/bin/bash\n";
     while (!parents.empty()) {
         current = &traversal_stack.top();
         if (current->com->get_name() != "root") {
@@ -586,9 +579,9 @@ void program::generate_code() {
             generated_code = translate(current->com, current->visited, parents, level);
             if (generated_code != "") {
                 for (int i = 0; i < ((old_level < level)?old_level:level); ++i) {
-                    printf("\t");
+                    out += "\t";
                 }
-                printf("%s\n", generated_code.c_str());
+                out += generated_code + "\n";
             } 
         }
         if (current->visited < current->com->get_num_children()) {
@@ -599,12 +592,13 @@ void program::generate_code() {
             parents.pop_back();
         }
     }
+    return out;
 }
 
-bool program::generate_bash(int debug) {
+int program::generate_bash(const std::string& file, int debug) {
     index_jumps_labels();
-    if (!connect_jumps()) {
-        return false;
+    if (connect_jumps()) {
+        return 1;
     }
     if (debug != 0) {
         for (std::vector<label>::iterator i = labels.labels.begin(); 
@@ -616,15 +610,22 @@ bool program::generate_bash(int debug) {
             }
         }
     }
-    if (!convert_goto()) {
-        return false;
+    if (convert_goto()) {
+        return 2;
     }
-    print_program_tree();
     if (debug != 0) {
-        printf("\ngenerated code:\n");
+        print_program_tree();
     }
-    generate_code();
-    return true;
+    std::string output = generate_code();
+    std::ofstream ofile(file.c_str());
+    if (!ofile.is_open()) {
+        fprintf(stderr, "file %s cannot be opened\n", file.c_str());
+        return 3;
+    } else {
+        ofile << output << std::endl;
+    }
+    ofile.close();
+    return 0;
 }
 
 bool label_list::label_exists(const std::string& name) const {
@@ -671,7 +672,6 @@ const label& label_list::get_label(const std::string& name) const {
         }
     }
     throw std::logic_error("label doesn't exist: " + name);
-    //return *(find(labels.begin(), labels.end(), label(name, 42)));
 }
 
 label& label_list::get_label(const std::string& name) {
@@ -681,7 +681,6 @@ label& label_list::get_label(const std::string& name) {
         }
     }
     throw std::logic_error("label doesn't exist: " + name);
-    //return *(find(labels.begin(), labels.end(), label(name, 42)));
 }
 
 
