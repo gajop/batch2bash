@@ -23,3 +23,6 @@ copy /A asd asd
 deltr /z:seriously /Y asd
 more  asd.txt
 choice
+choice /casd /t:s,23
+choice /cqwe /tw,5
+choice /cqwe /tw,4 "Choose"

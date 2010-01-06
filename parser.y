@@ -10,6 +10,7 @@
 #include "semantic.h"
 #include "command.h"
 #include "codegen.h"
+#include "utility.hpp"
 #include <stack>
 #include <string>
 #include <vector>
@@ -424,10 +425,103 @@ choice_command : CHOICE {/*default Y/N choice */
                  }
                | CHOICE option_list {
                      print_symbol("choce_command option_list");
-                     command* choice_command = new command("choice", line);
-                     choice_command->add_options(option_list);
+                     std::string choice;
+                     std::string echo = "echo -ne ";
+                     std::string var = progrm.new_var();
+                     std::string read = "read " + var + " ; " + "exit $" + var;
+                     std::map<char,int> opt;
+                     std::string timeout;
+                     int k = 1; // numbering the options
+                     int def = 1; // default option for timeout 
+                     for(unsigned int i = 0; i < option_list.size(); i++){
+                        switch(option_list[i][1]){
+                            case 'c': {
+                                for(int j = 2; option_list[i][j] != '\0'; j++){
+                                    if(option_list[i][j] == ':' && j != 2) {
+                                        yyerror("Invalid choice option");
+                                    } else if (option_list[i][j] != ':'){
+                                        echo = echo + "\"Type " + toString(k)  +  " for " + option_list[i][j] + ".\\n\"";
+                                        opt[option_list[i][j]] = k;
+                                        k++;
+                                    }
+                                }
+                                break;
+                            }
+                            case 't': {
+                               for(int j = 2; option_list[i][j] != '\0'; j++){
+                                    if((option_list[i][j] == ':' && j != 2) || 
+                                       (option_list[i][2] == ':' && option_list[i][j] == ',' && j != 4) ||
+                                       (option_list[i][2] != ':' && option_list[i][j] == ',' && j != 3 )){
+                                        yyerror("Invalid choice option");
+                                    } else if(( option_list[i][2] == ':' && j == 3) || (option_list[i][2] != ':' && j == 2)){
+                                        def = opt[option_list[i][j]];
+                                    } else if((option_list[i][2] == ':' && j > 4) || option_list[i][2] != ':' && j > 3) {
+                                        timeout = timeout + option_list[i][j];
+                                    }
+                               } 
+                               read = "read -t " + timeout +  " " + var + "; [ $? != 0 ] && " + var + "=" + toString(def) + "; exit $" + var;
+                               break;
+                            }
+                            case 'b' : break;
+                            case 'n' : break;
+                            case 's' : break;
+                            default: yyerror("Invalid choice option");
+                        }
+                     }
+                     choice = "sh -c ' " + echo + " ; " + read + " '"; 
+                     command* choice_command = new command(choice, line);
                      $$ = long(choice_command);
                  }
+               | CHOICE option_list string {
+                     print_symbol("choce_command option_list");
+                     std::string choice;
+                     std::string echo = "echo -ne \"" +  std::string((char *)$3) + "\\n\"" ;
+                     std::string var = progrm.new_var();
+                     std::string read = "read " + var + " ; " + "exit $" + var;
+                     std::map<char,int> opt;
+                     std::string timeout;
+                     int k = 1; // numbering the options
+                     int def = 1; // default option for timeout 
+                     for(unsigned int i = 0; i < option_list.size(); i++){
+                        switch(option_list[i][1]){
+                            case 'c': {
+                                for(int j = 2; option_list[i][j] != '\0'; j++){
+                                    if(option_list[i][j] == ':' && j != 2) {
+                                        yyerror("Invalid choice option");
+                                    } else if (option_list[i][j] != ':'){
+                                        echo = echo + "\"Type " + toString(k)  +  " for " + option_list[i][j] + ".\\n\"";
+                                        opt[option_list[i][j]] = k;
+                                        k++;
+                                    }
+                                }
+                                break;
+                            }
+                            case 't': {
+                               for(int j = 2; option_list[i][j] != '\0'; j++){
+                                    if((option_list[i][j] == ':' && j != 2) || 
+                                       (option_list[i][2] == ':' && option_list[i][j] == ',' && j != 4) ||
+                                       (option_list[i][2] != ':' && option_list[i][j] == ',' && j != 3 )){
+                                        yyerror("Invalid choice option");
+                                    } else if(( option_list[i][2] == ':' && j == 3) || (option_list[i][2] != ':' && j == 2)){
+                                        def = opt[option_list[i][j]];
+                                    } else if((option_list[i][2] == ':' && j > 4) || option_list[i][2] != ':' && j > 3) {
+                                        timeout = timeout + option_list[i][j];
+                                    }
+                               } 
+                               read = "read -t " + timeout +  " " + var + "; [ $? != 0 ] && " + var + "=" + toString(def) + "; exit $" + var;
+                               break;
+                            }
+                            case 'b' : break;
+                            case 'n' : break;
+                            case 's' : break;
+                            default: yyerror("Invalid choice option");
+                        }
+                     }
+                     choice = "sh -c ' " + echo + " ; " + read + " '"; 
+                     command* choice_command = new command(choice, line);
+                     $$ = long(choice_command);
+               
+               }
                ;
                 
 for_command : FOR PERCENT variable IN LPAREN command RPAREN DO command {
@@ -647,12 +741,10 @@ variable : PERCENT ID PERCENT {
 option_list : OPTION { 
                   option_list.clear(); 
                   strtolower((char *)$1);
-                  printf("!!!!!!!!!!!!!options lower:%s\n ",(char *)$1);
                   option_list.push_back((char *)($1)); 
               }
             | option_list OPTION {
                   strtolower((char *)$2);
-                  printf("!!!!!!!!!!!!!options lower:%s\n ",(char *)$2);
                   option_list.push_back((char *)($2));  
               }
             ; 
