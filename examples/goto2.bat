@@ -1,5 +1,7 @@
 echo off
 :end
 echo this might just be working
-goto end
+if errorlevel 2 (
+    goto end
+)
 echo end 

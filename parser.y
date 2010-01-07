@@ -38,7 +38,7 @@ void strtolower(char *str);
 %}
 
 %error-verbose
-%expect 1
+%expect 2
 
 /* keyword tokens */
 
@@ -51,7 +51,7 @@ void strtolower(char *str);
 %token CONSOLE 
 %token ELSE
 %token ERRORLEVEL
-%token EXIST
+%token EXISTS
 %token IF
 %token FOR 
 %token IN
@@ -98,7 +98,6 @@ void strtolower(char *str);
 %token PATH
 %token REN
 %token RD
-%token RMDIR
 %token SORT 
 %token TIME 
 %token TYPE 
@@ -109,7 +108,6 @@ void strtolower(char *str);
 %token BACKSLASH
 %token COLON
 %token SEMICOLON
-%token NUMBER
 %token NEWLINE
 %token ID
 %token SLASH
@@ -178,6 +176,7 @@ normal_command : compound_command   { $$ = $1; }
                | time_command       { $$ = $1; }
                | copy_command       { $$ = $1; }
                | sort_command       { $$ = $1; }
+               | custom_command     { $$ = $1; }
                ;
 
 
@@ -216,6 +215,7 @@ echo_command : ECHO {
                    print_symbol("echo_command"); 
                    char echo[MAXBUFF];
                    snprintf( echo, MAXBUFF-1, "\"%s\"", (char *)$1);
+                   free((char*)$1);
                    command* echo_command = new command("echo", line);
                    echo_command->add_string(echo);
                    $$ = long(echo_command);
@@ -249,6 +249,7 @@ rem_command : REM {
                   print_symbol("rem_command");      
                   command* rem_command = new command("rem", line);
                   rem_command->add_string((char *)$1);
+                  free((char*)$1);
                   $$ = long(rem_command);
                 }
             ;
@@ -418,7 +419,7 @@ move_command : MOVE path path {
 
 choice_command : CHOICE {/*default Y/N choice */
                      print_symbol("choce_command");
-                     command *sh_command = new command("sh -c ",line);
+                     command *sh_command = new command("bash -c ",line); 
                      std::string var = progrm.new_var();
                      sh_command->add_string(std::string("\'echo \"Type 1 for yes and 2 for no: \"") + 
                                                         ";" + "read " + var + ";" + "exit $" + var + "\'");
@@ -469,7 +470,7 @@ choice_command : CHOICE {/*default Y/N choice */
                             default: yyerror("Invalid choice option");
                         }
                      }
-                     choice = "sh -c ' " + echo + " ; " + read + " '"; 
+                     choice = "bash -c ' " + echo + " ; " + read + " '"; 
                      command* choice_command = new command(choice, line);
                      $$ = long(choice_command);
                  }
@@ -518,7 +519,7 @@ choice_command : CHOICE {/*default Y/N choice */
                             default: yyerror("Invalid choice option");
                         }
                      }
-                     choice = "sh -c ' " + echo + " ; " + read + " '"; 
+                     choice = "bash -c ' " + echo + " ; " + read + " '"; 
                      command* choice_command = new command(choice, line);
                      $$ = long(choice_command);
                
@@ -558,6 +559,12 @@ if_part : IF NOT if_body {
               command* if_comm = (command *)($4);
               if_comm->add_child((command*)($5));
               parents.pop();
+              if_comm->add_option("not");
+              std::vector<std::string>* str_vec = (std::vector<std::string>*)($3);
+              for (unsigned i = 0; i < str_vec->size(); ++i) {
+                  if_comm->add_string(str_vec->at(i));
+              }
+              delete str_vec;
               $$ = long(if_comm);
           }
         | IF if_body {
@@ -568,13 +575,34 @@ if_part : IF NOT if_body {
               command* if_comm = (command *)($3);
               if_comm->add_child((command*)($4));
               parents.pop();
+              std::vector<std::string>* str_vec = (std::vector<std::string>*)($2);
+              for (unsigned i = 0; i < str_vec->size(); ++i) {
+                  if_comm->add_string(str_vec->at(i));
+              }
+              delete str_vec;
               $$ = long(if_comm);
           }
         ;
 
-if_body : ERRORLEVEL NUMBER
-        | string STROP string 
-        | EXIST filename  
+if_body : ERRORLEVEL ID {
+              std::vector<std::string>* str_vec = new std::vector<std::string>;
+              str_vec->push_back("errorlevel");
+              str_vec->push_back((char *)($2));
+              $$ = long(str_vec);
+          }
+        | string STROP string {
+              std::vector<std::string>* str_vec = new std::vector<std::string>;
+              str_vec->push_back((char *)($1));
+              str_vec->push_back(rel_ops[$2]);
+              str_vec->push_back((char *)($3));
+              $$ = long(str_vec);
+          }
+        | EXISTS filename {
+              std::vector<std::string>* str_vec = new std::vector<std::string>;
+              str_vec->push_back("exists");
+              str_vec->push_back((char *)($2));
+              $$ = long(str_vec);
+          }
         ;
 
 goto_command : GOTO variable {
@@ -603,6 +631,7 @@ shift_command : SHIFT {
                 }
               | SHIFT OPTION {
                     print_symbol("shift_command");
+                    free((char*)$2);
                     $$ = long(new command("shift", line));
                 }
               ;
@@ -725,6 +754,58 @@ drive_command : DRIVE_ROOT {
                  //   $$ = long(new command("drive", line));
                 }
               ;
+
+args : args opt_id {
+           std::vector<argument>* args1 = (std::vector<argument>*)($1);
+           std::vector<argument>* args2 = (std::vector<argument>*)($2);
+           for (unsigned i = 0; i < args2->size(); ++i) {
+               args1->push_back(args2->at(i));
+           }
+           delete args2;
+           $$ = long(args1);
+       }
+     | opt_id {
+           $$ = $1;
+       }
+     ;
+
+custom_command : ID args {
+                     char* comm_name = (char *)($1);
+                     strtolower(comm_name);
+                     fprintf(stderr,  "warning: custom command: %s\n", comm_name);
+                     command* comm = new command(comm_name, line);
+                     std::vector<argument>* args = (std::vector<argument>*)($2);
+                     for (unsigned i = 0; i < args->size(); ++i) {
+                         if (args->at(i).type == aOPT) { 
+                             comm->add_option(args->at(i).value);
+                         } else {
+                             comm->add_string(args->at(i).value);
+                         }
+                     }
+                     $$ = long(comm);
+                 }
+               | ID {
+                     char* comm_name = (char *)($1);
+                     strtolower(comm_name);
+                     fprintf(stderr,  "warning: custom command: %s\n", (comm_name));
+                     command* comm = new command(comm_name, line);
+                     $$ = long(comm);
+                 }
+               ;
+
+opt_id : option_list {
+             std::vector<argument>* args = new std::vector<argument>;
+             for (unsigned i = 0; i < option_list.size(); ++i) {
+                 args->push_back(argument(option_list[i], aOPT));
+             }
+             $$ = long(args);
+         }
+       | filename {
+             std::vector<argument>* args = new std::vector<argument>;
+             args->push_back(argument((char *)($1), aSTRING));
+             $$ = long(args);
+         }
+       ;
                
 label : COLON ID {
             print_symbol("label");
@@ -743,18 +824,22 @@ option_list : OPTION {
                   option_list.clear(); 
                   strtolower((char *)$1);
                   option_list.push_back((char *)($1)); 
+                  free((char*)$1);
               }
             | option_list OPTION {
                   strtolower((char *)$2);
                   option_list.push_back((char *)($2));  
+                  free((char*)$1);
               }
             ; 
 
 filename : ID {
                $$ = $1;
            }
-         | ID DOT ID {
+         | filename DOT ID {
                sprintf((char *)$$, "%s.%s", (char *)$1, (char *)$3);
+//               free((char*)$1);
+               free((char*)$3);
            }
          ;
 
@@ -789,8 +874,10 @@ void strtolower(char *str){
 
 
 //simmple wrapper for translate_options for error reporting
-void trans_opts(char *name){
-    if(!translate_options(option_list,name)) yyerror("Unknown command option");
+void trans_opts(char *name) {
+    if (!translate_options(option_list,name)) {
+        fprintf(stderr, "Unknown command option (%d)\n", line);
+    }
 }
 
 int yyerror(char *s) {
@@ -842,7 +929,7 @@ int main(int argc, char *argv[]) {
     yyparse();
     fclose(yyin);
     if (!error) {
-        if (debug != 0 && !error) {
+        if (debug != 0) {
             progrm.print_program_tree();
         }
         return progrm.generate_bash(output_file, debug);

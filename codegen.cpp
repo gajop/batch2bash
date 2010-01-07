@@ -75,7 +75,25 @@ std::string translate(command* comm, int round, std::vector<command*> prev, int&
     if (name == "if") {
         if (round == 0) {
             ++indent;
-            return add_args("if", comm);
+            std::string out = "if [[";
+            bool not_found = false;
+            for (unsigned i = 0; i < comm->get_num_args(); ++i) {
+                if (comm->get_argument(i).value == "not") {
+                    out += " ! [[";
+                    not_found = true;
+                } else if (comm->get_argument(i).value == "errorlevel") {
+                    out += " $? ==";
+                } else if (comm->get_argument(i).value == "exists") {
+                    out += " -a";
+                } else {
+                    out = add_arg(out, comm->get_argument(i));
+                }
+            }
+            if (not_found) {
+                out += " ]] ";
+            }
+            out += " ]]; then";
+            return out;
         } else {
             --indent;
             if (prev[prev.size() - 2]->get_name() == "if_else") {
@@ -97,16 +115,41 @@ std::string translate(command* comm, int round, std::vector<command*> prev, int&
     } else if (name == "while") {
         if (round == 0) {
             ++indent;
-            return add_args("while", comm);
+            std::string out = "while [[";
+            bool not_found = false;
+            for (unsigned i = 0; i < comm->get_num_args(); ++i) {
+                if (comm->get_argument(i).value == "not") {
+                    out += " ! [[";
+                    not_found = true;
+                } else if (comm->get_argument(i).value == "errorlevel") {
+                    out += " $? ==";
+                } else if (comm->get_argument(i).value == "exists") {
+                    out += " -a";
+                } else {
+                    out = add_arg(out, comm->get_argument(i));
+                }
+            }
+            if (not_found) {
+                out += " ]] ";
+            }
+            out += " ]]; do";
+            return out;
         } else {
             --indent;
             return "done";
         }
-    }
-    else if (name == "pause"){
+    } else if (name == "pause"){
         return "echo \"Press enter to continue\"\nread ";
     } else if (name == "compound") {
         return ""; //hm
+    } else if (name == "set") {
+        std::string out;
+        for (unsigned i = 0; i < comm->get_num_args(); ++i) {
+            out += comm->get_argument(i).value;
+        }
+        return out;
+    } else if (name == "label") {
+        return "# unused label: " + comm->get_argument(0).value; 
     }
     if (lookup.exists(name)) {
         return add_args(lookup.get_trans(name), comm);
@@ -135,6 +178,7 @@ options::options(){
     //del options
     opts["/p"] = "-i";
     opts["/v"] = " ";
+    opts["/q"] = "-f";
     options_map["del"] = opts;
     opts.clear();
     //copy options , most make no sense,  or are a default  behaviour 

@@ -92,7 +92,7 @@ block generate_hidden_if(const std::vector<block>::iterator& begin,
         const std::vector<block>::iterator& end, const std::string& predicate) {
     command* if_comm = new command("if", begin->comms.back()->get_line());
     if_comm->add_option("not");
-    if_comm->add_string(predicate);
+    if_comm->add_string("$" + predicate);
     //ADD IF COMMAND PREDICATE HERE
     command* compound_comm = new command("compound",
             begin->comms.back()->get_line());
@@ -117,7 +117,7 @@ block generate_hidden_while(const std::vector<block>::iterator& begin,
         const std::vector<block>::iterator& end, const std::string& predicate) {
     command* while_comm = new command("while", begin->comms.back()->get_line());
     //ADD WHILE COMMAND PREDICATE HERE
-    while_comm->add_string(predicate);
+    while_comm->add_string("$" + predicate);
     while_comm->add_string("==");
     while_comm->add_string("1");
     command* compound_comm = new command("compound", begin->comms.back()->get_line());
@@ -311,7 +311,7 @@ block recursive_conv_goto(command* parent, program* shared_program) {
     // MULTIJUMPS
     // now if there are any remaining child_labels and corresponding jumps enclose it all in a big while loop and put ifs inside
     // TODO ACTUALLY DO IT :P
-    if (!child_jumps.empty() || !child_labels.empty()) {
+    if (child_blocks.size() > 1 && (!child_jumps.empty() || !child_labels.empty())) {
         std::vector<block>::iterator while_begin;
         std::vector<int> jumps_out;
         for (std::vector<block>::iterator i = child_blocks.begin(); 
@@ -394,12 +394,12 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                         block_begin, child_blocks.begin() + i,
                         shared_var);
                 new_block.comms.back()->clear_args();
-                new_block.comms.back()->add_string(shared_var);
+                new_block.comms.back()->add_string("$" + shared_var);
                 new_block.comms.back()->add_string("==");
                 new_block.comms.back()->add_string("1");
                 if (label != 0) {
                     new_block.comms.back()->add_string("||");
-                    new_block.comms.back()->add_string(shared_var);
+                    new_block.comms.back()->add_string("$" + shared_var);
                     new_block.comms.back()->add_string("==");
                     new_block.comms.back()->add_string(toString(label));
                 }
@@ -426,7 +426,7 @@ block recursive_conv_goto(command* parent, program* shared_program) {
         command* compound_comm = new command("compound", parent->get_line());
         if_comm->add_child(compound_comm);
         compound_comm->add_child(set_comm);
-        if_comm->add_string(shared_var);
+        if_comm->add_string("$" + shared_var);
         if_comm->add_string("==");
         if_comm->add_string("1");
         block if_block(if_comm);
@@ -443,7 +443,7 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                         j--;
                     } else {
                         if_comm->add_string("||");
-                        if_comm->add_string(shared_var);
+                        if_comm->add_string("$" + shared_var);
                         if_comm->add_string("==");
                         if_comm->add_string(toString(num));
                         set_comm = new command("set", parent->get_line());
@@ -464,7 +464,7 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                 child_blocks.begin() + child_blocks.size() - 1,
                 shared_var);
         new_block.comms.back()->clear_args();
-        new_block.comms.back()->add_string(shared_var);
+        new_block.comms.back()->add_string("$" + shared_var);
         new_block.comms.back()->add_string("!=");
         new_block.comms.back()->add_string("0");
         child_blocks.clear();
@@ -542,8 +542,8 @@ int program::connect_jumps() {
             i != jumps.jumps.end(); ++i) {
 		if (unused.label_exists(i->label)) {
 			unused.remove_label(i->label);
-        } else {
-            throw fprintf(stderr, "jump to an unknown label\n");
+        } else if (!labels.label_exists(i->label)) {
+            fprintf(stderr, "jump to an unknown label %s\n", i->label.c_str());
             return 2;
         }
     }
@@ -582,6 +582,7 @@ std::string program::generate_code() {
                     out += "\t";
                 }
                 out += generated_code + "\n";
+                std::cerr << generated_code << "\t" << current->com->get_name() << std::endl;
             } 
         }
         if (current->visited < current->com->get_num_children()) {

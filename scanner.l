@@ -21,15 +21,15 @@ newline             \n|\n\r
 
 %%
 
-echo[[:blank:]"."][^\n)^>^((>>)|(<))]*   { yylval = (long)strdup(yytext + 5);  print_token("ECHO"); return ECHO; }
+echo[[:blank:]"."][^\n><]*   { yylval = (long)strdup(yytext + 5);  print_token("ECHO"); return ECHO; }
 (rem[\t ]+.*)|rem       {  yylval = (long)strdup(yytext + 3);  print_token("REM"); return REM;      }
-"/"[a-zA-Z0-9|?|:|-|,]+   {  yylval = (long)strdup(yytext);  print_token("OPTION"); return OPTION; } 
+("/"|"-")[a-zA-Z0-9|?|:|-|,]+  {  yylval = (long)strdup(yytext);  print_token("OPTION"); return OPTION; } 
 call                    {  print_token("CALL"); return CALL;                                        }  
 choice                  {  print_token("CHOICE"); return CHOICE;                                    }
 con                     {  print_token("CONSOLE"); return CONSOLE;                                  }
 else                    {  print_token("ELSE"); return ELSE;                                        }  
 errorlevel              {  print_token("ERRORLEVEL"); return ERRORLEVEL;                            }
-exist                   {  print_token("EXIST"); return EXIST;                                      }
+exist                   {  print_token("EXISTS"); return EXISTS;                                      }
 if                      {  print_token("IF"); return IF;                                            }
 for                     {  print_token("FOR"); return FOR;                                          }
 in                      {  print_token("IN"); return IN;                                            }
@@ -37,9 +37,7 @@ do                      {  print_token("DO"); return DO;                        
 goto                    {  print_token("GOTO"); return GOTO;                                        }
 not                     {  print_token("NOT"); return NOT;                                          }
 nul                     {  print_token("NUL"); return NUL;                                          }
-off                     {  print_token("OFF"); return OFF;                                          }
-on                      {  print_token("ON"); return ON;                                            }
-pause                   {  print_token("PAUSE"); return PAUSE;                                      }
+pause"."?               {  print_token("PAUSE"); return PAUSE;                                      }
 set                     {  print_token("SET"); return SET;                                          }
 shift                   {  print_token("SHIFT"); return SHIFT;                                      }
 sgn                     {  print_token("SIGN"); return SIGN;                                        }
@@ -57,8 +55,6 @@ geq                     {  yylval = GE;  print_token("RELOP"); return RELOP;    
 "!"                     {  yylval = NEG;  print_token("STROP"); return STROP;                       }
 "|"                     {  print_token("PIPE"); return PIPE;                                        }
 "@"                     {  print_token("NOECHO"); return NOECHO;                                    }
-"*"                     {  yylval = MANY;  print_token("WILDCARD"); return WILDCARD;                }
-"?"                     {  yylval = ONE;  print_token("WILDCARD"); return WILDCARD;                 }
 "%"                     {  print_token("PERCENT"); return PERCENT;                                  }
 "("                     {  print_token("LPAREN"); return LPAREN;                                    }   
 ")"                     {  print_token("RPAREN"); return RPAREN;                                    }   
@@ -87,7 +83,6 @@ move                    {  print_token("MOVE"); return MOVE;                    
 path                    {  print_token("PATH"); return PATH;                                        }
 ren                     {  print_token("REN"); return REN;                                          }
 rd                      {  print_token("RD"); return RD;                                            }
-rmdir                   {  print_token("RMDIR"); return RMDIR;                                      }
 sort                    {  print_token("SORT"); return SORT;                                        }
 time                    {  print_token("TIME"); return TIME;                                        }
 type                    {  print_token("TYPE"); return TYPE;                                        }
@@ -96,13 +91,12 @@ xcopy                   {  print_token("XCOPY"); return XCOPY;                  
 [a-zA-Z]\:              {  print_token("DRIVE_ROOT"); yylval = (long)strdup(yytext); return DRIVE_ROOT;}
 [a-zA-Z0-9]+\\+[a-zA-Z0-9\\]*  {   print_token("PATH_LINE"); yylval = (long)strdup(yytext); return PATH_LINE;}
 
-{letter}({letter}|{digit})*    { yylval = (long)strdup(yytext);  print_token("ID\n"); return ID;     }
-{digit}+                       {  print_token("NUMBER"); return NUMBER;                         }
 ":"                            {  print_token("COLON"); return COLON;                           }
 ";"                            {  print_token("SEMICOLON"); return SEMICOLON;                   }
 "/"                            {  print_token("SLASH"); return SLASH;                           }
 "\\"                           {  print_token("BACKSLASH"); return BACKSLASH;                   }
 [[:blank:]]+                   {                                                                }
+[_a-zA-Z0-9"*""?"~]+    {  yylval = (long)strdup(yytext);  print_token("ID\n"); return ID;   }
 
 {newline}({newline}|[[:blank:]])*   { for (int i = 0; yytext[i] != '\0'; i++) { 
                                           if (yytext[i] == '\n') line++;
@@ -111,7 +105,7 @@ xcopy                   {  print_token("XCOPY"); return XCOPY;                  
                                     }
 
 \"\%?[a-z0-9[:blank:]]*\"        { print_token("STRING");yylval = (long)strdup(yytext); return STRING; }
-.                                { fprintf(stderr, "\nlexical error: (%d): %c, %d line not currently working :D", line, yytext[0], yytext[0]); error = 1; }
+.                                { fprintf(stderr, "\nlexical error: (%d): %c, %d", line, yytext[0], yytext[0]); error = 1; }
 
 %%
 

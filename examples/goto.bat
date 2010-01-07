@@ -1,5 +1,5 @@
 echo off
-goto end
+if errorlevel 0 goto end
 echo this isn't working
 echo 1
 echo 2
