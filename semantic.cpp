@@ -25,10 +25,8 @@ class jump_list {
 public:
     std::vector<jump> jumps;
     unsigned num_jumps() const;
-    jump& get_jump(int line);
-    const jump& get_jump(int line) const;
-    jump& get_jump(const std::string& label);
-    const jump& get_jump(const std::string& label) const;
+    jump* get_jump(int line);
+    jump* get_jump(const std::string& label);
 };
 
 class label {
@@ -66,7 +64,7 @@ struct block {
     std::vector<jump*> child_jumps;
     std::vector<command*> comms;
     block_type type;
-    block(command* comm) { comms.push_back(comm); }
+    block(command* comm) { comms.push_back(comm); type = bSIMPLE; }
     union jump_label {
         label *labl;
         jump *jmp;
@@ -114,7 +112,7 @@ block generate_hidden_if(const std::vector<block>::iterator& begin,
 }
 
 block generate_hidden_while(const std::vector<block>::iterator& begin,
-        const std::vector<block>::iterator& end, const std::string& predicate) {
+        const std::vector<block>::iterator& end, const std::string& predicate, int add_reset = 0) {
     command* while_comm = new command("while", begin->comms.back()->get_line());
     //ADD WHILE COMMAND PREDICATE HERE
     while_comm->add_string("$" + predicate);
@@ -122,6 +120,13 @@ block generate_hidden_while(const std::vector<block>::iterator& begin,
     while_comm->add_string("1");
     command* compound_comm = new command("compound", begin->comms.back()->get_line());
     while_comm->add_child(compound_comm);
+    if (add_reset) {
+        command* reset_predicate = new command("set", begin->comms.back()->get_line());
+        reset_predicate->add_string(predicate);
+        reset_predicate->add_string("=");
+        reset_predicate->add_string("0");
+        compound_comm->add_child(reset_predicate);
+    }
     if (begin != end) { //faster this way 
         for (std::vector<block>::iterator i = begin; i != (end + 1); ++i) {
             for (unsigned j = 0; j < i->comms.size(); ++j) {
@@ -143,8 +148,8 @@ block recursive_conv_goto(command* parent, program* shared_program) {
     if (!parent->get_num_children()) {
         if (parent->get_name() == "goto") { 
             ret.type = bCOND;
-            ret.jmplabel.jmp = &jumps.get_jump(parent->get_line());
-            ret.child_jumps.push_back(&jumps.get_jump(parent->get_line()));
+            ret.jmplabel.jmp = jumps.get_jump(parent->get_line());
+            ret.child_jumps.push_back(jumps.get_jump(parent->get_line()));
             parent->set_name("set");
             parent->clear_args();
             ret.jmplabel.jmp->var_name = shared_program->new_var();
@@ -240,8 +245,7 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                 prev.push(previous(LABEL, i));
                 ++label_counter;
             }
-		} else if (jump_counter < child_jumps.size() &&
-                line == child_jumps[jump_counter].front()->line) {
+		} else if (jump_counter < child_jumps.size() && current.type == bCOND) {
             if (child_jumps[jump_counter].size() == 1 && !prev.empty() 
                     && prev.top().type == LABEL && label_counter >= 1 && 
                     child_labels[label_counter - 1]->jumps.size() == 1 && 
@@ -270,7 +274,7 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                 comm->add_string("1");
                 block new_block = generate_hidden_while(child_blocks.begin() + 
                         prev.top().pos + 1, child_blocks.begin() + i,
-                       child_jumps[jump_counter].front()->var_name);
+                       child_jumps[jump_counter].front()->var_name, 1);
                 child_blocks.erase(child_blocks.begin() + prev.top().pos + 1,
                         child_blocks.begin() + i);
                 child_blocks.insert(child_blocks.begin() + prev.top().pos + 1,
@@ -685,37 +689,20 @@ label& label_list::get_label(const std::string& name) {
 }
 
 
-const jump& jump_list::get_jump(int line) const {
+
+jump* jump_list::get_jump(int line) {
     for (unsigned i = 0; i < jumps.size(); ++i) {
         if (jumps[i].line == line) {
-            return jumps[i];
+            return &jumps[i];
         }
     }
     throw std::logic_error("jump doesn't exist on line: " + toString(line));
 }
 
-jump& jump_list::get_jump(int line) {
-    for (unsigned i = 0; i < jumps.size(); ++i) {
-        if (jumps[i].line == line) {
-            return jumps[i];
-        }
-    }
-    throw std::logic_error("jump doesn't exist on line: " + toString(line));
-}
-
-jump& jump_list::get_jump(const std::string& label) {
+jump* jump_list::get_jump(const std::string& label) {
     for (unsigned i = 0; i < jumps.size(); ++i) {
         if (jumps[i].label == label) {
-            return jumps[i];
-        }
-    }
-    throw std::logic_error("jump doesn't with that label: " + label);
-}
-
-const jump& jump_list::get_jump(const std::string& label) const {
-    for (unsigned i = 0; i < jumps.size(); ++i) {
-        if (jumps[i].label == label) {
-            return jumps[i];
+            return &jumps[i];
         }
     }
     throw std::logic_error("jump doesn't with that label: " + label);
