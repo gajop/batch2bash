@@ -438,10 +438,10 @@ choice_command : CHOICE {/*default Y/N choice */
                      int k = 1; // numbering the options
                      int def = 1; // default option for timeout 
                      for(unsigned int i = 0; i < option_list.size(); i++){
-                        switch(option_list[i][1]){
+                        switch(option_list[i][0]){
                             case 'c': {
-                                for(int j = 2; option_list[i][j] != '\0'; j++){
-                                    if(option_list[i][j] == ':' && j != 2) {
+                                for(int j = 1; option_list[i][j] != '\0'; j++){
+                                    if(option_list[i][j] == ':' && j != 1) {
                                         yyerror("Invalid choice option");
                                     } else if (option_list[i][j] != ':'){
                                         echo = echo + "\"Type " + toString(k)  +  " for " + option_list[i][j] + ".\\n\"";
@@ -452,14 +452,14 @@ choice_command : CHOICE {/*default Y/N choice */
                                 break;
                             }
                             case 't': {
-                               for(int j = 2; option_list[i][j] != '\0'; j++){
-                                    if((option_list[i][j] == ':' && j != 2) || 
-                                       (option_list[i][2] == ':' && option_list[i][j] == ',' && j != 4) ||
-                                       (option_list[i][2] != ':' && option_list[i][j] == ',' && j != 3 )){
+                               for(int j = 1; option_list[i][j] != '\0'; j++){
+                                    if((option_list[i][j] == ':' && j != 1) || 
+                                       (option_list[i][1] == ':' && option_list[i][j] == ',' && j != 3) ||
+                                       (option_list[i][1] != ':' && option_list[i][j] == ',' && j != 2 )){
                                         yyerror("Invalid choice option");
-                                    } else if(( option_list[i][2] == ':' && j == 3) || (option_list[i][2] != ':' && j == 2)){
+                                    } else if(( option_list[i][1] == ':' && j == 2) || (option_list[i][1] != ':' && j == 1)){
                                         def = opt[option_list[i][j]];
-                                    } else if((option_list[i][2] == ':' && j > 4) || option_list[i][2] != ':' && j > 3) {
+                                    } else if((option_list[i][1] == ':' && j > 3) || option_list[i][1] != ':' && j > 2) {
                                         timeout = timeout + option_list[i][j];
                                     }
                                } 
@@ -487,10 +487,10 @@ choice_command : CHOICE {/*default Y/N choice */
                      int k = 1; // numbering the options
                      int def = 1; // default option for timeout 
                      for(unsigned int i = 0; i < option_list.size(); i++){
-                        switch(option_list[i][1]){
+                        switch(option_list[i][0]){
                             case 'c': {
-                                for(int j = 2; option_list[i][j] != '\0'; j++){
-                                    if(option_list[i][j] == ':' && j != 2) {
+                                for(int j = 1; option_list[i][j] != '\0'; j++){
+                                    if(option_list[i][j] == ':' && j != 1) {
                                         yyerror("Invalid choice option");
                                     } else if (option_list[i][j] != ':'){
                                         echo = echo + "\"Type " + toString(k)  +  " for " + option_list[i][j] + ".\\n\"";
@@ -501,14 +501,14 @@ choice_command : CHOICE {/*default Y/N choice */
                                 break;
                             }
                             case 't': {
-                               for(int j = 2; option_list[i][j] != '\0'; j++){
-                                    if((option_list[i][j] == ':' && j != 2) || 
-                                       (option_list[i][2] == ':' && option_list[i][j] == ',' && j != 4) ||
-                                       (option_list[i][2] != ':' && option_list[i][j] == ',' && j != 3 )){
+                               for(int j = 1; option_list[i][j] != '\0'; j++){
+                                    if((option_list[i][j] == ':' && j != 1) || 
+                                       (option_list[i][1] == ':' && option_list[i][j] == ',' && j != 3) ||
+                                       (option_list[i][1] != ':' && option_list[i][j] == ',' && j != 2 )){
                                         yyerror("Invalid choice option");
-                                    } else if(( option_list[i][2] == ':' && j == 3) || (option_list[i][2] != ':' && j == 2)){
+                                    } else if(( option_list[i][1] == ':' && j == 2) || (option_list[i][1] != ':' && j == 1)){
                                         def = opt[option_list[i][j]];
-                                    } else if((option_list[i][2] == ':' && j > 4) || option_list[i][2] != ':' && j > 3) {
+                                    } else if((option_list[i][1] == ':' && j > 3) || option_list[i][1] != ':' && j > 2) {
                                         timeout = timeout + option_list[i][j];
                                     }
                                } 

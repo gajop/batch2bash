@@ -139,7 +139,7 @@ std::string translate(command* comm, int round, std::vector<command*> prev, int&
             return "done";
         }
     } else if (name == "pause"){
-        return "echo \"Press enter to continue\"\nread ";
+        return "echo \"Press enter to continue\"; read ";
     } else if (name == "compound") {
         return ""; //hm
     } else if (name == "set") {
@@ -168,7 +168,11 @@ std::string add_args(const std::string& translated_name, command* comm) {
 }
 
 std::string add_arg(const std::string& so_far, const argument& arg) {
-    return so_far + " " + arg.value;
+    if (arg.type == aOPT) {
+        return so_far + " -" + arg.value;
+    } else {
+        return so_far + " " +  arg.value;
+    }
 }
 
 
