@@ -23,6 +23,7 @@ extern int error;
 extern FILE* yyin;
 
 std::vector<std::string> option_list;
+std::vector<std::string> for_list;
 std::stack<command*> parents;
 program progrm;
 
@@ -34,11 +35,10 @@ void trans_opts(char *name);
 void convert_path(char *path);
 void strtolower(char *str);
 
-
 %}
 
 %error-verbose
-%expect 2
+%expect 3 
 
 /* keyword tokens */
 
@@ -528,12 +528,27 @@ choice_command : CHOICE {/*default Y/N choice */
                }
                ;
                 
-for_command : FOR PERCENT variable IN LPAREN command RPAREN DO command {
+for_command : FOR PERCENT variable IN LPAREN for_list RPAREN DO command {
                   print_symbol("for_command");
-                  $$ = long(new command("for", line));
+                  command* for_command = new command("for",line);
+                  for_command->add_string((char *)$3);
+                  for(unsigned int i = 0; i< for_list.size(); i++){
+                    for_command->add_string(for_list[i]);
+                  }
+                  for_command->add_child((command *)$9);
+                  $$ = long(for_command);
                   free((char *)($3));
               }
             ;
+
+for_list : ID{
+            for_list.clear();
+            for_list.push_back((char *)$1);
+           }
+         | for_list ID {
+            for_list.push_back((char *)$2);
+           }
+         ;
 
 if_command : if_part ELSE {
                  $$ = long(new command("else", line));
@@ -824,7 +839,7 @@ opt_id : option_list {
              std::vector<argument>* args = new std::vector<argument>;
              args->push_back(argument((char *)($1), aSTRING));
              $$ = long(args);
-             free((char*)($1));
+        //     free((char*)($1));
          }
        ;
                
@@ -840,18 +855,21 @@ label : COLON ID {
 variable : PERCENT ID PERCENT {
                $$ = $2; 
            }
+         | PERCENT ID {
+               $$ = $2; 
+           }
          ;
 
 option_list : OPTION { 
                   option_list.clear(); 
                   strtolower((char *)$1);
                   option_list.push_back((char *)($1)); 
-                  free((char*)$1);
+//                  free((char*)$1);
               }
             | option_list OPTION {
                   strtolower((char *)$2);
                   option_list.push_back((char *)($2));  
-                  free((char*)$1);
+  //                free((char*)$1);
               }
             ; 
 
@@ -861,7 +879,7 @@ filename : ID {
          | filename DOT ID {
                sprintf((char *)$$, "%s.%s", (char *)$1, (char *)$3);
 //               free((char*)$1);
-               free((char*)$3);
+//               free((char*)$3);
            }
          ;
 
@@ -884,10 +902,20 @@ path : PATH_LINE {
      | filename {
            $$ = $1;
        }
+     | variable {
+          char temp[MAXBUFF];
+          snprintf(temp,MAXBUFF-1,"$%s",$1);
+          $$ = long(temp);
+       }
      ;   
 
-string : STRING { $$ = $1; } 
-       | ID     { $$ = $1; }
+string : STRING   { $$ = $1; } 
+       | ID       { $$ = $1; }
+       | variable { 
+          char temp[MAXBUFF];
+          snprintf(temp,MAXBUFF-1,"$%s",$1);
+          $$ = long(temp);
+          }
        ;
           
 
@@ -967,7 +995,6 @@ int main(int argc, char *argv[]) {
         return error;
     }
 }
-
 
 void print_symbol(const char *str) {
     if (debug) fprintf(stdout, "\t%s %d\n", str,line);

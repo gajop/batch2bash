@@ -150,6 +150,20 @@ std::string translate(command* comm, int round, std::vector<command*> prev, int&
         return out;
     } else if (name == "label") {
         return "# unused label: " + comm->get_argument(0).value; 
+    } else if (name == "for") {
+        if(round == 0 ) {
+            std::string out = "for ";
+            out = out + comm->get_argument(0).value;
+            out = out + " in ";
+            for(unsigned int i = 1; i < comm->get_num_args(); i++) {
+                out = out + " " + comm->get_argument(i).value;
+            }
+            ++indent;
+            return out + "\ndo";
+        } else { 
+            --indent;
+            return "done";
+        }
     }
     if (lookup.exists(name)) {
         return add_args(lookup.get_trans(name), comm);
@@ -206,7 +220,7 @@ options::options(){
     opts["/w"] = "-C";
     opts["/a"] = " ";
     opts["/o"] = " ";
-    opts["/s"] = "-R";
+    opts["s"] = "-R";
     opts["/b"] = " ";
     opts["/l"] = " ";
     opts["/y"] = " ";

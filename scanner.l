@@ -98,7 +98,7 @@ xcopy                   {  print_token("XCOPY"); return XCOPY;                  
 [[:blank:]]+                   {                                                                }
 [_a-zA-Z0-9"*""?"~]+    {  yylval = (long)strdup(yytext);  print_token("ID\n"); return ID;   }
 
-{newline}({newline}|[[:blank:]])*   { for (int i = 0; yytext[i] != '\0'; i++) { 
+{newline}({newline}|[[:blank:]])*   { for (unsigned int i = 0; yytext[i] != '\0'; i++) { 
                                           if (yytext[i] == '\n') line++;
                                         }
                                       print_token("NEWLINE\n"); return NEWLINE; 
