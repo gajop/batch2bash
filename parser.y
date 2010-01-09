@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "defs.h"
 #include <unistd.h>
+#include <string.h>
 #include "semantic.h"
 #include "command.h"
 #include "codegen.h"
@@ -753,7 +754,7 @@ cd_command : CD {
                  cd_command->add_string((char *)$2);
                  $$ = long(cd_command);
              }
-           | CD DRIVE_ROOT BACKSLASH { //exception , doesn't do anything 
+           | CD DRIVE_ROOT BACKSLASH { 
                  print_symbol("cd_command drive_root\\");
                  command* cd_command = new command("cd",line);
                  char drv[MAXBUFF]; 
@@ -873,7 +874,6 @@ opt_id : option_list {
              std::vector<argument>* args = new std::vector<argument>;
              args->push_back(argument((char *)($1), aSTRING));
              $$ = long(args);
-        //     free((char*)($1));
          }
        ;
                
@@ -898,12 +898,10 @@ option_list : OPTION {
                   option_list.clear(); 
                   strtolower((char *)$1);
                   option_list.push_back((char *)($1)); 
-//                  free((char*)$1);
               }
             | option_list OPTION {
                   strtolower((char *)$2);
                   option_list.push_back((char *)($2));  
-  //                free((char*)$1);
               }
             ; 
 
@@ -912,8 +910,6 @@ filename : ID {
            }
          | filename DOT ID {
                sprintf((char *)$$, "%s.%s", (char *)$1, (char *)$3);
-//               free((char*)$1);
-//               free((char*)$3);
            }
          ;
 
