@@ -43,11 +43,9 @@ std::string translate(command* comm, int round, std::vector<command*> prev, int&
         if (round == 0) {
             ++indent;
             std::string out = "if [[";
-            bool not_found = false;
             for (unsigned i = 0; i < comm->get_num_args(); ++i) {
                 if (comm->get_argument(i).value == "not") {
-                    out += " ! [[";
-                    not_found = true;
+                    out += " ! ";
                 } else if (comm->get_argument(i).value == "errorlevel") {
                     out += " $? ==";
                 } else if (comm->get_argument(i).value == "exists") {
@@ -55,9 +53,6 @@ std::string translate(command* comm, int round, std::vector<command*> prev, int&
                 } else {
                     out = add_arg(out, comm->get_argument(i));
                 }
-            }
-            if (not_found) {
-                out += " ]] ";
             }
             out += " ]]; then";
             return out;
@@ -83,11 +78,9 @@ std::string translate(command* comm, int round, std::vector<command*> prev, int&
         if (round == 0) {
             ++indent;
             std::string out = "while [[";
-            bool not_found = false;
             for (unsigned i = 0; i < comm->get_num_args(); ++i) {
                 if (comm->get_argument(i).value == "not") {
-                    out += " ! [[";
-                    not_found = true;
+                    out += " ! ";
                 } else if (comm->get_argument(i).value == "errorlevel") {
                     out += " $? ==";
                 } else if (comm->get_argument(i).value == "exists") {
@@ -95,9 +88,6 @@ std::string translate(command* comm, int round, std::vector<command*> prev, int&
                 } else {
                     out = add_arg(out, comm->get_argument(i));
                 }
-            }
-            if (not_found) {
-                out += " ]] ";
             }
             out += " ]]; do";
             return out;
