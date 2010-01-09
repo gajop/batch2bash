@@ -917,7 +917,6 @@ filename : ID {
 path : PATH_LINE {
            convert_path((char *)$1);
            $$ = $1;
-           free((char *)$1);
        }
      | DRIVE_ROOT BACKSLASH PATH_LINE {
            convert_path((char *)$3);
@@ -933,7 +932,7 @@ path : PATH_LINE {
            $$ = $1;
        }
      | variable {
-          char temp[MAXBUFF];
+          char *temp = (char *)malloc(MAXBUFF);
           snprintf(temp,MAXBUFF-1,"$%s",$1);
           $$ = long(temp);
        }
