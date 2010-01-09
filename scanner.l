@@ -68,6 +68,7 @@ chdir                   {  print_token("CHDIR"); return CD;                     
 cls                     {  print_token("CLS"); return CLS;                                          }
 comp                    {  print_token("COMP"); return COMP;                                        }
 copy                    {  print_token("COPY"); return COPY;                                        }
+color                   {  print_token("COLOR"); return COLOR;                                      }     
 del                     {  print_token("DEL"); return DEL;                                          }
 deltr                   {  print_token("DELTR"); return DELTR;                                      }
 date		        	{  print_token("DATE"); return DATE;                                        }

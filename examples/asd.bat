@@ -7,7 +7,7 @@ rem
 @ECHO OFF
 
 rem testing redirection translating 
-dir /S temp      > contentOfTemp.txt
+dir /S /P temp      > contentOfTemp.txt
 dir  temp >> isAppendingWorking.txt
 rem next command doesn't do anything 
 echo < isAddpendingWorking.txt
@@ -26,3 +26,7 @@ choice
 choice /casd /t:s,23
 choice /cqwe /tw,5
 choice /cqwe /tw,4 "Choose"
+color 4
+color 
+color 17 
+color

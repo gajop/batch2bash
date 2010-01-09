@@ -85,6 +85,7 @@ void strtolower(char *str);
 %token CLS
 %token COMP  
 %token COPY
+%token COLOR
 %token DEL
 %token DELTR
 %token DIR
@@ -175,6 +176,7 @@ normal_command : compound_command   { $$ = $1; }
                | date_command       { $$ = $1; }
                | time_command       { $$ = $1; }
                | copy_command       { $$ = $1; }
+               | color_command      { $$ = $1; }
                | sort_command       { $$ = $1; }
                | custom_command     { $$ = $1; }
                ;
@@ -271,6 +273,38 @@ copy_command : COPY path path {
                   $$ = long(copy_command);
                }
              ;
+color_command : COLOR {
+                print_symbol("color");
+                $$ = long(new command("tput sgr0",line));
+                }
+              | COLOR ID {
+                command* color_command = new command("color",line);
+                strtolower((char *)$1);
+                    switch(strlen((char *)$2)){
+                        case 1: {
+                            option_list.clear();
+                            option_list.push_back(std::string("t") + (char *)$2);
+                            trans_opts("color");
+                            color_command->add_options(option_list);
+                            $$ = long(color_command);
+                            break;
+                        }
+                        case 2: {
+                            if(((char *)$2)[0] == ((char *)$2)[1]){
+                                yyerror("Cannot set same background color as text in color command ");
+                            }
+                            option_list.clear();
+                            option_list.push_back(std::string("t") + ((char *)$2)[1]);
+                            option_list.push_back(std::string("b") + ((char *)$2)[0]);
+                            trans_opts("color");
+                            color_command->add_options(option_list);
+                            $$ = long(color_command);
+                            break;
+                        } 
+                        default: yyerror("Illegal color argument");
+                    }             
+                }
+              ;
 
 del_command : DEL path {
                   print_symbol("del_command");

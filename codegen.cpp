@@ -41,12 +41,12 @@ REM # commend
 lookup_commands::lookup_commands() {
     std::string orig[] = { "assign", "attrib", "chdir", "cls", "comp", "copy", "del",
         "erase", "fc", "find", "md", "move", "rd", "time", "type", "xcopy","rem", "dir",
-        "deltree", "path", "date", "sort","set_line","unset","set"};
+        "deltree", "path", "date", "sort","set_line","unset","set","color"};
 
     std::string trans[] = { "ln", "attrib", "cd", "clear", "diff", "cp", "rm",
         "rm", "comm", "grep", "mkdir", "mv", "rmdir", "date", "cat", "cp" ,"#","ls -l",
-        "rm -r", "export", "date", "sort","env","unset","" };
-    int num = 25;
+        "rm -r", "export", "date", "sort","env","unset","","echo -ne " };
+    int num = 26;
     for (int i = 0; i < num; ++i) {
         comms[orig[i]] = trans[i];
     }
@@ -220,7 +220,7 @@ options::options(){
     opts["/w"] = "-C";
     opts["/a"] = " ";
     opts["/o"] = " ";
-    opts["s"] = "-R";
+    opts["/s"] = "-R";
     opts["/b"] = " ";
     opts["/l"] = " ";
     opts["/y"] = " ";
@@ -267,10 +267,44 @@ options::options(){
     opts["/u"] = " ";
     options_map["set"] = opts;
     opts.clear();
+    //color codes translation
+    //text colors
+    opts["t0"] = "\'\\E[0;30m\'";
+    opts["t1"] = "\'\\E[0;34m\'";
+    opts["t2"] = "\'\\E[0;32m\'";
+    opts["t3"] = "\'\\E[0;36m\'";
+    opts["t4"] = "\'\\E[0;31m\'";
+    opts["t5"] = "\'\\E[0;35m\'";
+    opts["t6"] = "\'\\E[1;33m\'";
+    opts["t7"] = "\'\\E[1;37m\'";
+    opts["t8"] = "\'\\E[0;37m\'";
+    opts["t9"] = "\'\\E[1;34m\'";
+    opts["ta"] = "\'\\E[1;32m\'";
+    opts["tb"] = "\'\\E[1;36m\'";
+    opts["tc"] = "\'\\E[1;31m\'";
+    opts["td"] = "\'\\E[1;35m\'";
+    opts["te"] = "\'\\E[1;33m\'";
+    opts["tf"] = "\'\\E[1;37m\'";
+    //background colors
+    opts["b0"] = "\'\\E[0;40m\'";
+    opts["b1"] = "\'\\E[0;44m\'";
+    opts["b2"] = "\'\\E[0;42m\'";
+    opts["b3"] = "\'\\E[0;46m\'";
+    opts["b4"] = "\'\\E[0;41m\'";
+    opts["b5"] = "\'\\E[0;45m\'";
+    opts["b6"] = "\'\\E[1;43m\'";
+    opts["b7"] = "\'\\E[1;47m\'";
+    opts["b8"] = "\'\\E[0;47m\'";
+    opts["b9"] = "\'\\E[1;44m\'";
+    opts["ba"] = "\'\\E[1;42m\'";
+    opts["bb"] = "\'\\E[1;46m\'";
+    opts["bc"] = "\'\\E[1;41m\'";
+    opts["bd"] = "\'\\E[1;45m\'";
+    opts["be"] = "\'\\E[1;43m\'";
+    opts["bf"] = "\'\\E[1;47m\'";
+    options_map["color"] = opts;
+    opts.clear();
     //
-    
-
-
 }
 
 options opts;
