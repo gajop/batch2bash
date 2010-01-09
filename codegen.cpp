@@ -131,6 +131,8 @@ std::string translate(command* comm, int round, std::vector<command*> prev, int&
             --indent;
             return "done";
         }
+    } else if(name == "call"){
+        return "./" + comm->get_argument(0).value;
     }
     if (lookup.exists(name)) {
         return add_args(lookup.get_trans(name), comm);

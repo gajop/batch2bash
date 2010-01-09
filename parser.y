@@ -195,6 +195,15 @@ redir_command : command REDIRECT path {
                     ((command *)$1)->add_string(redir);
                     $$ = $1;
                 }
+              | command REDIRECT NUL {
+                    print_symbol("redirect command null");
+                    char redir[MAXBUFF];
+                    switch($2) {
+                        case W: snprintf( redir, MAXBUFF-1, "> /dev/null"); break;
+                        case A: snprintf( redir, MAXBUFF-1, ">> /dev/null"); break;
+                        }
+                    ((command *)$1)->add_string(redir);
+              }
               ;
 
 newline_list : command_list                 { $$ = $1; }
@@ -650,8 +659,8 @@ if_body : ERRORLEVEL ID {
               str_vec->push_back(rel_ops[$2]);
               str_vec->push_back((char *)($3));
               $$ = long(str_vec);
-              free((char *)$1);
-              free((char *)$3);
+              //free((char *)$1);
+              //free((char *)$3);
           }
         | EXISTS filename {
               std::vector<std::string>* str_vec = new std::vector<std::string>;
@@ -696,7 +705,10 @@ shift_command : SHIFT {
               ;
 call_command : CALL path {
                    print_symbol("call_command path");
-                   $$ = long(new command("call", line));
+                   command* call_command = new command("call",line);
+                   call_command->add_string((char *)$2);
+                   $$ = long(call_command);
+
                }
              ;
         
