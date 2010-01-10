@@ -186,23 +186,25 @@ normal_command : compound_command   { $$ = $1; }
 //not sure this is ok but werkz for now
 redir_command : command REDIRECT path {
                     print_symbol("redirect command");
-                    char redir[MAXBUFF];
+                    std::string temp;
                     switch($2) {
-                        case W: snprintf( redir, MAXBUFF-1, "> %s", (char *)$3); break;
-                        case A: snprintf( redir, MAXBUFF-1, ">> %s",(char *)$3); break;
-                        case R: snprintf( redir, MAXBUFF-1, "< %s", (char *)$3); break;
+                        case W: temp = ">"; break;
+                        case A: temp = ">>"; break;
+                        case R: temp = "<"; break;
                     }
-                    ((command *)$1)->add_string(redir);
+                    temp += *(std::string *)$3;
+                    ((command *)$1)->add_string(temp);
+                    delete (std::string *)($3);
                     $$ = $1;
                 }
               | command REDIRECT NUL {
                     print_symbol("redirect command null");
-                    char redir[MAXBUFF];
+                    std::string temp;
                     switch($2) {
-                        case W: snprintf( redir, MAXBUFF-1, "> /dev/null"); break;
-                        case A: snprintf( redir, MAXBUFF-1, ">> /dev/null"); break;
+                        case W: temp = "> /dev/null"; break;
+                        case A: temp = ">> /dev/null"; break;
                         }
-                    ((command *)$1)->add_string(redir);
+                    ((command *)$1)->add_string(temp);
               }
               ;
 
@@ -250,9 +252,8 @@ path_command : PATH {
              | PATH path {
                     print_symbol("path_command path");
                     command* path_command = new command("path", line);
-                    char env[MAXBUFF];
-                    snprintf( env, MAXBUFF-1, "PATH=\"%s\"", (char *)$2);
-                    path_command->add_string(env);
+                    path_command->add_string("PATH=\"" + *(std::string *)$2 + "\"");
+                    delete (std::string *)($2);
                     $$ = long(path_command);
                 }
              ;
@@ -269,17 +270,21 @@ rem_command : REM {
 copy_command : COPY path path {
                   print_symbol("copy_command");
                   command* copy_command = new command("copy", line);
-                  copy_command->add_string((char *)$2);
-                  copy_command->add_string((char *)$3);
+                  copy_command->add_string(*(std::string *)$2);
+                  copy_command->add_string(*(std::string *)$3);
+                  delete (std::string *)($2);
+                  delete (std::string *)($3);
                   $$ = long(copy_command);
                }
              | COPY option_list path path {
                   print_symbol("copy_command options_list");
                   trans_opts("copy");
                   command* copy_command = new command("copy", line);
-                  copy_command->add_string((char *)$3);
-                  copy_command->add_string((char *)$4);
+                  copy_command->add_string(*(std::string *)$3);
+                  copy_command->add_string(*(std::string *)$4);
                   copy_command->add_options(option_list);
+                  delete (std::string *)($3);
+                  delete (std::string *)($4);
                   $$ = long(copy_command);
                }
              ;
@@ -289,7 +294,7 @@ color_command : COLOR {
                 }
               | COLOR ID {
                 command* color_command = new command("color",line);
-                strtolower((char *)$1);
+                strtolower((char *)$2);
                     switch(strlen((char *)$2)){
                         case 1: {
                             option_list.clear();
@@ -313,21 +318,24 @@ color_command : COLOR {
                         } 
                         default: yyerror("Illegal color argument");
                     }             
+                    free ((char *)$2);
                 }
               ;
 
 del_command : DEL path {
                   print_symbol("del_command");
                   command* del_command = new command("del", line);
-                  del_command->add_string((char *)$2);
+                  del_command->add_string(*(std::string *)$2);
+                  delete (std::string *)($2);
                   $$ = long(del_command);
               }
             | DEL option_list  path {
                    print_symbol("del_commandi option_list");
                    trans_opts("del");
                    command* del_command = new command("del", line);
-                   del_command->add_string((char *) $3);
+                   del_command->add_string(*(std::string *) $3);
                    del_command->add_options(option_list);
+                   delete (std::string *)($3);
                    $$ = long(del_command);
               }
             ;
@@ -335,7 +343,8 @@ del_command : DEL path {
 deltree_command : DELTR path {
                       print_symbol("deltree_command path");
                       command* deltree_command = new command("deltree", line);
-                      deltree_command->add_string((char *)$2);
+                      deltree_command->add_string(*(std::string *)$2);
+                      delete (std::string *)($2);
                       $$ = long(deltree_command);
                   }
                 | DELTR option_list path {
@@ -343,7 +352,8 @@ deltree_command : DELTR path {
                       trans_opts("deltree");
                       command* deltree_command = new command("deltree", line);
                       deltree_command->add_options(option_list);
-                      deltree_command->add_string((char *)$3);
+                      deltree_command->add_string(*(std::string *)$3);
+                      delete (std::string *)($3);
                       $$ = long(deltree_command);
                   }
                 ;
@@ -363,15 +373,18 @@ dir_command : DIR {
             | DIR path {
                   print_symbol("dir_command path");
                   command* dir_command = new command("dir", line);
-                  dir_command->add_string((char *)$2);
+                  dir_command->add_string(*(std::string *)$2);
                   $$ = long(dir_command);
+                  delete (std::string *)($2);
               }
             | DIR option_list path {
                   print_symbol("dir_command option_list path");
                   trans_opts("dir");
                   command* dir_command = new command("dir", line);
                   dir_command->add_options(option_list);
+                  dir_command->add_string(*(std::string *)$3);
                   $$ = long(dir_command);
+                  delete (std::string *)($3);
               }
             ;
             
@@ -384,26 +397,31 @@ exit_command : EXIT {
 find_command : FIND string path {
                    print_symbol("find_command path");
                    command* find_command = new command("find",line);
-                   find_command->add_string((char *)$2);
-                   find_command->add_string((char *)$3);
+                   find_command->add_string(*(std::string *)$2);
+                   find_command->add_string(*(std::string *)$3);
                    $$ = long(find_command);
+                   delete (std::string *)($2);
+                   delete (std::string *)($3);
                }
              | FIND option_list string path {
                    print_symbol("find_command option_list path");
                    trans_opts("find");
                    command* find_command = new command("find",line);
-                   find_command->add_string((char *)$3);
-                   find_command->add_string((char *)$4);
+                   find_command->add_string(*(std::string *)$3);
+                   find_command->add_string(*(std::string *)$4);
                    find_command->add_options(option_list);
                    $$ = long(find_command);
+                   delete (std::string *)($3);
+                   delete (std::string *)($4);
                }
              ;
              
 mkdir_command : MKDIR path {
                     print_symbol("mkdir_command path");
                     command* mkdir_command = new command("mkdir", line);
-                    mkdir_command->add_string((char *)$2);
+                    mkdir_command->add_string(*(std::string *)$2);
                     $$ = long(mkdir_command);
+                    delete (std::string *)($2);
                 }
               ; 
              
@@ -427,36 +445,40 @@ more_command : MORE {
              | MORE filename {
                    print_symbol("more_command filename");
                    command* more_command = new command("more",line);
-                   more_command->add_string((char *)$2);
+                   more_command->add_string(*(std::string *)$2);
                    $$ = long(more_command);
-                   free((char*)($2));
+                   delete (std::string *)($2);
                }
              | MORE option_list filename {
                    print_symbol("more_command option_list filename");
                    trans_opts("more");
                    command* more_command = new command("more", line);
-                   more_command->add_string((char *)$3);
+                   more_command->add_string(*(std::string *)$3);
                    more_command->add_options(option_list);
                    $$ = long(more_command);
-                   free((char*)($3));
+                   delete (std::string *)($3);
                }
              ;
 
 move_command : MOVE path path {
                    print_symbol("move_command path path");
                    command* move_command = new command("move",line);
-                   move_command->add_string((char *)$2);
-                   move_command->add_string((char *)$3);
+                   move_command->add_string(*(std::string *)$2);
+                   move_command->add_string(*(std::string *)$3);
                    $$ = long(move_command);
+                   delete (std::string *)($3);
+                   delete (std::string *)($2);
                }
              | MOVE option_list path path {
                    print_symbol("move_command path path");
                    trans_opts("move");
                    command* move_command = new command("move",line);
-                   move_command->add_string((char *)$3);
-                   move_command->add_string((char *)$4);
+                   move_command->add_string(*(std::string *)$3);
+                   move_command->add_string(*(std::string *)$4);
                    move_command->add_options(option_list);
                    $$ = long(move_command);
+                   delete (std::string *)($3);
+                   delete (std::string *)($4);
                }
              ;
     
@@ -523,7 +545,8 @@ choice_command : CHOICE {/*default Y/N choice */
                | CHOICE option_list string {
                      print_symbol("choce_command option_list");
                      std::string choice;
-                     std::string echo = "echo -ne \"" +  std::string((char *)$3) + "\\n\"" ;
+                     std::string echo = "echo -ne \"" +  std::string(*(std::string *)$3) 
+                       + "\\n\"" ;
                      std::string var = progrm.new_var();
                      std::string read = "read " + var + " ; " + "exit $" + var;
                      std::map<char,int> opt;
@@ -568,29 +591,31 @@ choice_command : CHOICE {/*default Y/N choice */
                      choice = "bash -c ' " + echo + " ; " + read + " '"; 
                      command* choice_command = new command(choice, line);
                      $$ = long(choice_command);
-               
+                     delete (std::string *) ($3);
                }
                ;
                 
 for_command : FOR PERCENT variable IN LPAREN for_list RPAREN DO command {
                   print_symbol("for_command");
                   command* for_command = new command("for",line);
-                  for_command->add_string((char *)$3);
+                  for_command->add_string(*(std::string *)$3);
                   for(unsigned int i = 0; i< for_list.size(); i++){
                     for_command->add_string(for_list[i]);
                   }
                   for_command->add_child((command *)$9);
                   $$ = long(for_command);
-                  free((char *)($3));
+                  delete (std::string *)($3);
               }
             ;
 
 for_list : ID{
             for_list.clear();
             for_list.push_back((char *)$1);
+            free((char *) $1);
            }
          | for_list ID {
             for_list.push_back((char *)$2);
+            free((char *) $2);
            }
          ;
 
@@ -655,18 +680,18 @@ if_body : ERRORLEVEL ID {
           }
         | string STROP string {
               std::vector<std::string>* str_vec = new std::vector<std::string>;
-              str_vec->push_back((char *)($1));
+              str_vec->push_back(*(std::string *)($1));
               str_vec->push_back(rel_ops[$2]);
-              str_vec->push_back((char *)($3));
+              str_vec->push_back(*(std::string *)($3));
               $$ = long(str_vec);
-              //free((char *)$1);
-              //free((char *)$3);
+              delete (std::string*) $1;
+              delete (std::string*) $3;
           }
         | EXISTS filename {
               std::vector<std::string>* str_vec = new std::vector<std::string>;
               str_vec->push_back("exists");
-              str_vec->push_back((char *)($2));
-              free((char*)($2));
+              str_vec->push_back(*(std::string *)($2));
+              delete (std::string *)($2);
               $$ = long(str_vec);
           }
         ;
@@ -674,9 +699,9 @@ if_body : ERRORLEVEL ID {
 goto_command : GOTO variable {
                    print_symbol("goto_command");
                    command* goto_command = new command("goto", line);
-                   goto_command->add_string((char *)($2));
+                   goto_command->add_string(*(std::string *)($2));
                    $$ = long(goto_command);
-                   free((char *)($2));
+                   delete (std::string *)($2);
                }
              | GOTO ID {
                    print_symbol("goto_command");
@@ -706,9 +731,9 @@ shift_command : SHIFT {
 call_command : CALL path {
                    print_symbol("call_command path");
                    command* call_command = new command("call",line);
-                   call_command->add_string((char *)$2);
+                   call_command->add_string(*(std::string *)$2);
                    $$ = long(call_command);
-
+                   delete (std::string *) $2;
                }
              ;
         
@@ -719,40 +744,37 @@ set_command : SET {
             | SET variable {
                   print_symbol("set_command");
                   command* set_command = new command("echo",line);
-                  char temp[MAXBUFF];
-                  snprintf(temp,MAXBUFF-1,"$%s",(char *)$2);
-                  set_command->add_string(temp);
+                  set_command->add_string(std::string("$" + *(std::string *) $2));
                   $$ = long(set_command);
-                  free((char *)($2));
+                  delete (std::string *) $2;
               }
             | SET variable ASSIGN {
                   print_symbol("set_command variable=");
                   command* set_command = new command("unset",line);
-                  set_command->add_string((char *)$2);
+                  set_command->add_string(*(std::string *)$2);
                   $$ = long(set_command);
-                  free((char *)($2));
+                  delete (std::string *) $2;
               }
             | SET variable ASSIGN_OP string {
                   print_symbol("set_command id = string");
                   command* set_command = new command("set",line);
                   char temp[MAXBUFF];
-                  snprintf(temp, MAXBUFF-1, "%s=%s", (char *)$2, (char *)$4);
-                  set_command->add_string(temp);
-                  free((char *)$4);
+                  set_command->add_string(*(std::string *) $2 + 
+                    "=" + *(std::string *) $4);
                   $$ = long(set_command);
-                  free((char *)($2));
+                  delete (std::string *) $2;
+                  delete (std::string *) $4;
               }
             | SET option_list variable ASSIGN_OP string {
                   print_symbol("set_command option_list id = string");
                   command* set_command = new command("set",line);
-                  char temp[MAXBUFF];
-                  snprintf( temp, MAXBUFF-1, "%s=%s", (char *)$3, (char *)$5);
-                  set_command->add_string(temp);
+                  set_command->add_string(*(std::string *) $3 + 
+                    "=" + *(std::string *) $5);
                   trans_opts("set");
                   set_command->add_options(option_list);
-                  free((char *)$5);
                   $$ = long(set_command);
-                  free((char *)($3));
+                  delete (std::string *) $3;
+                  delete (std::string *) $5;
               }
             ;
 
@@ -763,15 +785,14 @@ cd_command : CD {
            | CD path {
                  print_symbol("cd_command path");
                  command* cd_command = new command("cd",line);
-                 cd_command->add_string((char *)$2);
+                 cd_command->add_string(*(std::string *) $2);
                  $$ = long(cd_command);
+                 delete (std::string *) $2;
              }
            | CD DRIVE_ROOT BACKSLASH { 
                  print_symbol("cd_command drive_root\\");
                  command* cd_command = new command("cd",line);
-                 char drv[MAXBUFF]; 
-                 snprintf(drv, MAXBUFF-1, "%s/", (char *)$2);
-                 cd_command->add_string(drv);
+                 cd_command->add_string(std::string((char *) $2) + "/");
                  free((char *)$2);
                  $$ = long(cd_command);
              }
@@ -787,18 +808,22 @@ cd_command : CD {
 fc_command : FC path path {
                  print_symbol("fc path path");
                  command* fc_command = new command("fc",line);
-                 fc_command->add_string((char *)$2);
-                 fc_command->add_string((char *)$3);
+                 fc_command->add_string(*(std::string *) $2);
+                 fc_command->add_string(*(std::string *) $3);
                  $$ = long(fc_command);
+                 delete (std::string *) $2;
+                 delete (std::string *) $3;
              } 
            | FC option_list path path {
                  print_symbol("fc option_list path path");
                  command* fc_command = new command("fc",line);
-                 fc_command->add_string((char *)$2);
-                 fc_command->add_string((char *)$3);
+                 fc_command->add_string(*(std::string *) $3);
+                 fc_command->add_string(*(std::string *) $4);
 //                 trans_opts("fc"); //not done!!!
                  fc_command->add_options(option_list);
                  $$ = long(fc_command);
+                 delete (std::string *) $3;
+                 delete (std::string *) $4;
              }
            ;
 
@@ -852,7 +877,9 @@ args : args opt_id {
 custom_command : ID args {
                      char* comm_name = (char *)($1);
                      strtolower(comm_name);
-                     fprintf(stderr,  "warning: custom command: %s\n", comm_name);
+                     if (debug) {
+                         fprintf(stderr,  "warning: custom command: %s\n", comm_name);
+                     } 
                      command* comm = new command(comm_name, line);
                      std::vector<argument>* args = (std::vector<argument>*)($2);
                      for (unsigned i = 0; i < args->size(); ++i) {
@@ -863,15 +890,18 @@ custom_command : ID args {
                          }
                      }
                      $$ = long(comm);
-                     free((char*)($1));
+                     delete (std::vector<argument>*)($2);
+                     free((char *) $1);
                  }
                | ID {
                      char* comm_name = (char *)($1);
                      strtolower(comm_name);
-                     fprintf(stderr,  "warning: custom command: %s\n", (comm_name));
+                     if (debug) {
+                         fprintf(stderr,  "warning: custom command: %s\n", (comm_name));
+                     }
                      command* comm = new command(comm_name, line);
-                     $$ = long(comm);
-                     free((char*)($1));
+                     $$ = (long) comm;
+                     free((char *) $1);
                  }
                ;
 
@@ -884,7 +914,8 @@ opt_id : option_list {
          }
        | filename {
              std::vector<argument>* args = new std::vector<argument>;
-             args->push_back(argument((char *)($1), aSTRING));
+             args->push_back(argument(*(std::string *) $1, aSTRING));
+             delete (std::string *) $1;
              $$ = long(args);
          }
        ;
@@ -892,17 +923,21 @@ opt_id : option_list {
 label : COLON ID {
             print_symbol("label");
             command* label = new command("label", line);
-            label->add_string((char *)($2));
-            $$ = long(label);
-            free((char*)($2));
+            label->add_string((char *) $2);
+            $$ = (long) label;
+            free((char *) $2);
         }
       ;
 
 variable : PERCENT ID PERCENT {
-               $$ = $2; 
+               std::string* temp = new std::string(std::string((char *) $2));
+               free((char *) $2);
+               $$ = (long) temp;
            }
          | PERCENT ID {
-               $$ = $2; 
+               std::string* temp = new std::string(std::string((char *) $2));
+               free((char *) $2);
+               $$ = (long) temp;
            }
          ;
 
@@ -910,53 +945,74 @@ option_list : OPTION {
                   option_list.clear(); 
                   strtolower((char *)$1);
                   option_list.push_back((char *)($1)); 
+                  free((char *) $1);
               }
             | option_list OPTION {
                   strtolower((char *)$2);
                   option_list.push_back((char *)($2));  
+                  free((char *) $2);
               }
             ; 
 
 filename : ID {
-               $$ = $1;
+               std::string* temp = new std::string(std::string((char *) $1));
+               free((char *) $1);
+               $$ = (long) temp;
            }
          | filename DOT ID {
-               sprintf((char *)$$, "%s.%s", (char *)$1, (char *)$3);
+               std::string* temp = new std::string(*(std::string *) $1 + "." + (char *) $3);
+               delete (std::string *) $1;
+               free((char *) $3);
+               $$ = (long) temp;
            }
          ;
 
 
 path : PATH_LINE {
-           convert_path((char *)$1);
-           $$ = $1;
+           convert_path((char *) $1);
+           std::string* temp = new std::string(std::string((char *) $1));
+           free((char *) $1);
+           $$ = (long) temp;
        }
      | DRIVE_ROOT BACKSLASH PATH_LINE {
-           convert_path((char *)$3);
-           sprintf((char *)$$, "%s/%s", (char *)$1, (char *)$3);
-           free((char *)$1);
-           free((char *)$3);
+           convert_path((char *) $3);
+           std::string* temp = new std::string(std::string((char *) $1) + "/" + (char *) $3);
+           free((char *) $1);
+           free((char *) $3);
+           $$ = (long) temp;
        }
      | DRIVE_ROOT BACKSLASH filename { 
-           sprintf((char *)$$, "%s/%s", (char *)$1, (char *)$3); 
-           free((char *)$1);
+           std::string* temp = new std::string(std::string((char *) $1) + "/" + 
+             *(std::string *) $3);
+           free((char *) $1);
+           delete (std::string *) $3;
+           $$ = (long) temp;
        }
      | filename {
            $$ = $1;
        }
      | variable {
-          char *temp = (char *)malloc(MAXBUFF);
-          snprintf(temp,MAXBUFF-1,"$%s",$1);
-          $$ = long(temp);
+           std::string* temp = new std::string("$" + std::string((char *) $1));
+           delete (std::string *) $1;
+           $$ = (long) temp;
        }
      ;   
 
-string : STRING   { $$ = $1; } 
-       | ID       { $$ = $1; }
+string : STRING { 
+             std::string* temp = new std::string(std::string((char *) $1));
+             free((char *) $1);
+             $$ = (long) temp;
+         } 
+       | ID { 
+             std::string* temp = new std::string(std::string((char *) $1));
+             free((char *) $1);
+             $$ = (long) temp;
+         } 
        | variable { 
-          char temp[MAXBUFF];
-          snprintf(temp,MAXBUFF-1,"$%s",$1);
-          $$ = long(temp);
-          }
+            std::string* temp = new std::string("$" + *(std::string *) $1);
+            delete (std::string *) $1;
+            $$ = (long) temp;
+         }
        ;
           
 
@@ -975,7 +1031,9 @@ void strtolower(char *str){
 //simmple wrapper for translate_options for error reporting
 void trans_opts(char *name) {
     if (!translate_options(option_list,name)) {
-        fprintf(stderr, "Unknown command option (%d)\n", line);
+        if (debug) {
+            fprintf(stderr, "Unknown command option (%d)\n", line);
+        }
     }
 }
 

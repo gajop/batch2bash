@@ -235,6 +235,7 @@ block recursive_conv_goto(command* parent, program* shared_program) {
                 child_blocks.erase(child_blocks.begin() + prev.top().pos + 1, 
                         child_blocks.begin() + i + 1);
                 child_blocks[prev.top().pos] = new_block;
+                delete parent->get_child(end); // i'm giving this a 50/50 that it'll work
                 parent->remove_children(begin + 1, end);
                 parent->insert_child(begin + 1, new_block.comms.back());
                 i = prev.top().pos;
@@ -586,7 +587,6 @@ std::string program::generate_code() {
                     out += "\t";
                 }
                 out += generated_code + "\n";
-                std::cerr << generated_code << "\t" << current->com->get_name() << std::endl;
             } 
         }
         if (current->visited < current->com->get_num_children()) {
@@ -605,7 +605,7 @@ int program::generate_bash(const std::string& file, int debug) {
     if (connect_jumps()) {
         return 1;
     }
-    if (debug != 0) {
+    if (debug) {
         for (std::vector<label>::iterator i = labels.labels.begin(); 
                 i != labels.labels.end(); ++i) {
             printf("%d:%s:\n", i->line, i->name.c_str());
