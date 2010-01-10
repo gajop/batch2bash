@@ -23,7 +23,7 @@ newline             \n|\n\r
 
 echo[[:blank:]"."][^\n><]*   { yylval = (long)strdup(yytext + 5);  print_token("ECHO"); return ECHO; }
 (rem[\t ]+.*)|rem       {  yylval = (long)strdup(yytext + 3);  print_token("REM"); return REM;      }
-("/"|"-")[a-zA-Z0-9|?|:|-|,]+  {  yylval = (long)strdup(yytext + 1);  print_token("OPTION"); return OPTION; } 
+("/"|"-")[a-zA-Z0-9|?|:|-|,]+  {  yylval = (long)strdup(yytext);  print_token("OPTION"); return OPTION; } 
 call                    {  print_token("CALL"); return CALL;                                        }  
 choice                  {  print_token("CHOICE"); return CHOICE;                                    }
 con                     {  print_token("CONSOLE"); return CONSOLE;                                  }
@@ -84,6 +84,7 @@ move                    {  print_token("MOVE"); return MOVE;                    
 path                    {  print_token("PATH"); return PATH;                                        }
 ren                     {  print_token("REN"); return REN;                                          }
 rd                      {  print_token("RD"); return RD;                                            }
+rmdir                   {  print_token("RD"); return RD;                                            }
 sort                    {  print_token("SORT"); return SORT;                                        }
 time                    {  print_token("TIME"); return TIME;                                        }
 type                    {  print_token("TYPE"); return TYPE;                                        }

@@ -152,6 +152,7 @@ silent_command : NOECHO normal_command { $$ = $2; }
 normal_command : compound_command   { $$ = $1; }
                | echo_command       { $$ = $1; }
                | rem_command        { $$ = $1; }
+               | rd_command         { $$ = $1; }
                | choice_command     { $$ = $1; }
                | if_command         { $$ = $1; }
                | for_command        { $$ = $1; }
@@ -266,6 +267,25 @@ rem_command : REM {
                   $$ = long(rem_command);
                 }
             ;
+
+rd_command : RD path {
+                print_symbol("rd_command");
+                command* rd_command = new command("rd",line);
+                rd_command->add_string(*(std::string*)$2);
+                $$ = long(rd_command);
+                delete (std::string *)($2);
+               }
+            | RD option_list path {
+                print_symbol("rd_command");
+                trans_opts("rd");
+                command* rd_command = new command("rd",line);
+                rd_command->add_options(option_list);
+                rd_command->add_string(*(std::string*)$3);
+                $$ = long(rd_command);
+                delete (std::string *)($3);
+               }
+            ;
+
 //not fully done , comlications with options 
 copy_command : COPY path path {
                   print_symbol("copy_command");
@@ -504,10 +524,10 @@ choice_command : CHOICE {/*default Y/N choice */
                      int k = 1; // numbering the options
                      int def = 1; // default option for timeout 
                      for(unsigned int i = 0; i < option_list.size(); i++){
-                        switch(option_list[i][0]){
+                        switch(option_list[i][1]){
                             case 'c': {
-                                for(int j = 1; option_list[i][j] != '\0'; j++){
-                                    if(option_list[i][j] == ':' && j != 1) {
+                                for(int j = 2; option_list[i][j] != '\0'; j++){
+                                    if(option_list[i][j] == ':' && j != 2) {
                                         yyerror("Invalid choice option");
                                     } else if (option_list[i][j] != ':'){
                                         echo = echo + "\"Type " + toString(k)  +  " for " + option_list[i][j] + ".\\n\"";
@@ -518,14 +538,14 @@ choice_command : CHOICE {/*default Y/N choice */
                                 break;
                             }
                             case 't': {
-                               for(int j = 1; option_list[i][j] != '\0'; j++){
-                                    if((option_list[i][j] == ':' && j != 1) || 
-                                       (option_list[i][1] == ':' && option_list[i][j] == ',' && j != 3) ||
-                                       (option_list[i][1] != ':' && option_list[i][j] == ',' && j != 2 )){
+                               for(int j = 2; option_list[i][j] != '\0'; j++){
+                                    if((option_list[i][j] == ':' && j != 2) || 
+                                       (option_list[i][2] == ':' && option_list[i][j] == ',' && j != 4) ||
+                                       (option_list[i][2] != ':' && option_list[i][j] == ',' && j != 3 )){
                                         yyerror("Invalid choice option");
-                                    } else if(( option_list[i][1] == ':' && j == 2) || (option_list[i][1] != ':' && j == 1)){
+                                    } else if(( option_list[i][2] == ':' && j == 3) || (option_list[i][2] != ':' && j == 2)){
                                         def = opt[option_list[i][j]];
-                                    } else if((option_list[i][1] == ':' && j > 3) || option_list[i][1] != ':' && j > 2) {
+                                    } else if((option_list[i][2] == ':' && j > 4) || option_list[i][2] != ':' && j > 3) {
                                         timeout = timeout + option_list[i][j];
                                     }
                                } 
@@ -554,10 +574,10 @@ choice_command : CHOICE {/*default Y/N choice */
                      int k = 1; // numbering the options
                      int def = 1; // default option for timeout 
                      for(unsigned int i = 0; i < option_list.size(); i++){
-                        switch(option_list[i][0]){
+                        switch(option_list[i][1]){
                             case 'c': {
-                                for(int j = 1; option_list[i][j] != '\0'; j++){
-                                    if(option_list[i][j] == ':' && j != 1) {
+                                for(int j = 2; option_list[i][j] != '\0'; j++){
+                                    if(option_list[i][j] == ':' && j != 2) {
                                         yyerror("Invalid choice option");
                                     } else if (option_list[i][j] != ':'){
                                         echo = echo + "\"Type " + toString(k)  +  " for " + option_list[i][j] + ".\\n\"";
@@ -568,14 +588,14 @@ choice_command : CHOICE {/*default Y/N choice */
                                 break;
                             }
                             case 't': {
-                               for(int j = 1; option_list[i][j] != '\0'; j++){
-                                    if((option_list[i][j] == ':' && j != 1) || 
-                                       (option_list[i][1] == ':' && option_list[i][j] == ',' && j != 3) ||
-                                       (option_list[i][1] != ':' && option_list[i][j] == ',' && j != 2 )){
+                               for(int j = 2; option_list[i][j] != '\0'; j++){
+                                    if((option_list[i][j] == ':' && j != 2) || 
+                                       (option_list[i][2] == ':' && option_list[i][j] == ',' && j != 4) ||
+                                       (option_list[i][2] != ':' && option_list[i][j] == ',' && j != 3 )){
                                         yyerror("Invalid choice option");
-                                    } else if(( option_list[i][1] == ':' && j == 2) || (option_list[i][1] != ':' && j == 1)){
+                                    } else if(( option_list[i][2] == ':' && j == 3) || (option_list[i][2] != ':' && j == 2)){
                                         def = opt[option_list[i][j]];
-                                    } else if((option_list[i][1] == ':' && j > 3) || option_list[i][1] != ':' && j > 2) {
+                                    } else if((option_list[i][2] == ':' && j > 4) || option_list[i][2] != ':' && j > 3) {
                                         timeout = timeout + option_list[i][j];
                                     }
                                } 

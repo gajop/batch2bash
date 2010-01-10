@@ -135,6 +135,11 @@ std::string add_args(const std::string& translated_name, command* comm) {
     std::string ret = translated_name;
     for (unsigned i = 0; i < comm->get_num_args(); ++i) {
         argument arg = comm->get_argument(i);
+        if(arg.type = aOPT) {
+            if(arg.value[0] == '/'){
+                arg.value[0] = '-';
+            }
+        }
         ret = add_arg(ret, arg);
     }
     return ret;
@@ -262,6 +267,11 @@ options::options(){
     opts["be"] = "\'\\E[1;43m\'";
     opts["bf"] = "\'\\E[1;47m\'";
     options_map["color"] = opts;
+    opts.clear();
+    //rd options
+    opts["/s"] = "--ignore-fail-on-non-empty";
+    opts["/q"] = " ";
+    options_map["rd"] = opts;
     opts.clear();
     //
 }
