@@ -227,7 +227,7 @@ echo_command : ECHO {
                    print_symbol("echo_command"); 
                    char echo[MAXBUFF];
                    snprintf( echo, MAXBUFF-1, "\"%s\"", (char *)$1);
-                   //free((char*)$1);
+                   free((char*)$1);
                    command* echo_command = new command("echo", line);
                    echo_command->add_string(echo);
                    $$ = long(echo_command);
@@ -261,7 +261,7 @@ rem_command : REM {
                   print_symbol("rem_command");      
                   command* rem_command = new command("rem", line);
                   rem_command->add_string((char *)$1);
-                  //free((char*)$1);
+                  free((char*)$1);
                   $$ = long(rem_command);
                 }
             ;
@@ -429,7 +429,7 @@ more_command : MORE {
                    command* more_command = new command("more",line);
                    more_command->add_string((char *)$2);
                    $$ = long(more_command);
-                   //free((char*)($2));
+                   free((char*)($2));
                }
              | MORE option_list filename {
                    print_symbol("more_command option_list filename");
@@ -438,7 +438,7 @@ more_command : MORE {
                    more_command->add_string((char *)$3);
                    more_command->add_options(option_list);
                    $$ = long(more_command);
-                   //free((char*)($3));
+                   free((char*)($3));
                }
              ;
 
@@ -581,7 +581,7 @@ for_command : FOR PERCENT variable IN LPAREN for_list RPAREN DO command {
                   }
                   for_command->add_child((command *)$9);
                   $$ = long(for_command);
-                  //free((char *)($3));
+                  free((char *)($3));
               }
             ;
 
@@ -650,7 +650,7 @@ if_body : ERRORLEVEL ID {
               std::vector<std::string>* str_vec = new std::vector<std::string>;
               str_vec->push_back("errorlevel");
               str_vec->push_back((char *)($2));
-              //free((char*)($2));
+              free((char*)($2));
               $$ = long(str_vec);
           }
         | string STROP string {
@@ -659,14 +659,14 @@ if_body : ERRORLEVEL ID {
               str_vec->push_back(rel_ops[$2]);
               str_vec->push_back((char *)($3));
               $$ = long(str_vec);
-              ////free((char *)$1);
-              ////free((char *)$3);
+              //free((char *)$1);
+              //free((char *)$3);
           }
         | EXISTS filename {
               std::vector<std::string>* str_vec = new std::vector<std::string>;
               str_vec->push_back("exists");
               str_vec->push_back((char *)($2));
-              //free((char*)($2));
+              free((char*)($2));
               $$ = long(str_vec);
           }
         ;
@@ -676,13 +676,13 @@ goto_command : GOTO variable {
                    command* goto_command = new command("goto", line);
                    goto_command->add_string((char *)($2));
                    $$ = long(goto_command);
-                   //free((char *)($2));
+                   free((char *)($2));
                }
              | GOTO ID {
                    print_symbol("goto_command");
                    command* goto_command = new command("goto", line);
                    goto_command->add_string((char *)($2));
-                   //free((char*)($2));
+                   free((char*)($2));
                    $$ = long(goto_command);
                }
              ;
@@ -699,7 +699,7 @@ shift_command : SHIFT {
                 }
               | SHIFT OPTION {
                     print_symbol("shift_command");
-                    //free((char*)$2);
+                    free((char*)$2);
                     $$ = long(new command("shift", line));
                 }
               ;
@@ -723,14 +723,14 @@ set_command : SET {
                   snprintf(temp,MAXBUFF-1,"$%s",(char *)$2);
                   set_command->add_string(temp);
                   $$ = long(set_command);
-                  //free((char *)($2));
+                  free((char *)($2));
               }
             | SET variable ASSIGN {
                   print_symbol("set_command variable=");
                   command* set_command = new command("unset",line);
                   set_command->add_string((char *)$2);
                   $$ = long(set_command);
-                  //free((char *)($2));
+                  free((char *)($2));
               }
             | SET variable ASSIGN_OP string {
                   print_symbol("set_command id = string");
@@ -738,9 +738,9 @@ set_command : SET {
                   char temp[MAXBUFF];
                   snprintf(temp, MAXBUFF-1, "%s=%s", (char *)$2, (char *)$4);
                   set_command->add_string(temp);
-                  //free((char *)$4);
+                  free((char *)$4);
                   $$ = long(set_command);
-                  //free((char *)($2));
+                  free((char *)($2));
               }
             | SET option_list variable ASSIGN_OP string {
                   print_symbol("set_command option_list id = string");
@@ -750,9 +750,9 @@ set_command : SET {
                   set_command->add_string(temp);
                   trans_opts("set");
                   set_command->add_options(option_list);
-                  //free((char *)$5);
+                  free((char *)$5);
                   $$ = long(set_command);
-                  //free((char *)($3));
+                  free((char *)($3));
               }
             ;
 
@@ -772,14 +772,14 @@ cd_command : CD {
                  char drv[MAXBUFF]; 
                  snprintf(drv, MAXBUFF-1, "%s/", (char *)$2);
                  cd_command->add_string(drv);
-                 //free((char *)$2);
+                 free((char *)$2);
                  $$ = long(cd_command);
              }
            | CD DRIVE_ROOT {
                  print_symbol("cd_command drive_root");
                  command* cd_command = new command("cd", line);
                  cd_command->add_string((char *)$2);
-                 //free((char *)$2);
+                 free((char *)$2);
                  $$ = long(cd_command);
              }
            ;
@@ -830,7 +830,7 @@ time_command : TIME {
 
 drive_command : DRIVE_ROOT {
                     print_symbol("drive_command");
-                    //free((char *)$1); //this command is incomplete...
+                    free((char *)$1); //this command is incomplete...
                  //   $$ = long(new command("drive", line));
                 }
               ;
@@ -863,7 +863,7 @@ custom_command : ID args {
                          }
                      }
                      $$ = long(comm);
-                     //free((char*)($1));
+                     free((char*)($1));
                  }
                | ID {
                      char* comm_name = (char *)($1);
@@ -871,7 +871,7 @@ custom_command : ID args {
                      fprintf(stderr,  "warning: custom command: %s\n", (comm_name));
                      command* comm = new command(comm_name, line);
                      $$ = long(comm);
-                     //free((char*)($1));
+                     free((char*)($1));
                  }
                ;
 
@@ -894,7 +894,7 @@ label : COLON ID {
             command* label = new command("label", line);
             label->add_string((char *)($2));
             $$ = long(label);
-            //free((char*)($2));
+            free((char*)($2));
         }
       ;
 
@@ -933,12 +933,12 @@ path : PATH_LINE {
      | DRIVE_ROOT BACKSLASH PATH_LINE {
            convert_path((char *)$3);
            sprintf((char *)$$, "%s/%s", (char *)$1, (char *)$3);
-           //free((char *)$1);
-           //free((char *)$3);
+           free((char *)$1);
+           free((char *)$3);
        }
      | DRIVE_ROOT BACKSLASH filename { 
            sprintf((char *)$$, "%s/%s", (char *)$1, (char *)$3); 
-           //free((char *)$1);
+           free((char *)$1);
        }
      | filename {
            $$ = $1;
