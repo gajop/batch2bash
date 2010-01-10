@@ -135,7 +135,7 @@ std::string add_args(const std::string& translated_name, command* comm) {
     std::string ret = translated_name;
     for (unsigned i = 0; i < comm->get_num_args(); ++i) {
         argument arg = comm->get_argument(i);
-        if(arg.type = aOPT) {
+        if(arg.type == aOPT) {
             if(arg.value[0] == '/'){
                 arg.value[0] = '-';
             }
@@ -157,6 +157,7 @@ std::string add_arg(const std::string& so_far, const argument& arg) {
 options::options(){
     
     std::map<std::string,std::string> opts;
+
     //del options
     opts["/p"] = "-i";
     opts["/v"] = " ";
