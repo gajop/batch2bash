@@ -4,7 +4,7 @@ batch2bash - Batch to bash translator
 .SH "SYNOPSIS"
 .B "batch2bash" [-d] -i infile -o outfile
 .SH "DESCRIPTION"
-Given a working, syntaticly and semanticly correct(!) batch file it produces a bash file. Only exception are some weird goto jumps which you should avoid in general.
+Given a working, syntactically and semantically correct(!) batch file it produces a bash file. Only exception are some weird goto jumps which you should avoid in general.
 You still need to make the output file executable if that is your intention.
 .SH OPTIONS
 .TP
@@ -16,3 +16,8 @@ input batch file
 .TP 
 \fB-o outfile\fR
 output bash file
+
+
+
+.SH WARNING 
+Running a translated script without checking it first is highly discouraged. Always first make sure it won't do any damage.

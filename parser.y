@@ -33,6 +33,7 @@ int yylex(void);
 int yyerror(char *s);
 void print_symbol(const char *str);
 void trans_opts(char *name);
+void trans_choice(std::string& choice,std::string& echo);
 void convert_path(char *path);
 void strtolower(char *str);
 
@@ -517,102 +518,19 @@ choice_command : CHOICE {/*default Y/N choice */
                      print_symbol("choce_command option_list");
                      std::string choice;
                      std::string echo = "echo -ne ";
-                     std::string var = progrm.new_var();
-                     std::string read = "read " + var + " ; " + "exit $" + var;
-                     std::map<char,int> opt;
-                     std::string timeout;
-                     int k = 1; // numbering the options
-                     int def = 1; // default option for timeout 
-                     for(unsigned int i = 0; i < option_list.size(); i++){
-                        switch(option_list[i][1]){
-                            case 'c': {
-                                for(int j = 2; option_list[i][j] != '\0'; j++){
-                                    if(option_list[i][j] == ':' && j != 2) {
-                                        yyerror("Invalid choice option");
-                                    } else if (option_list[i][j] != ':'){
-                                        echo = echo + "\"Type " + toString(k)  +  " for " + option_list[i][j] + ".\\n\"";
-                                        opt[option_list[i][j]] = k;
-                                        k++;
-                                    }
-                                }
-                                break;
-                            }
-                            case 't': {
-                               for(int j = 2; option_list[i][j] != '\0'; j++){
-                                    if((option_list[i][j] == ':' && j != 2) || 
-                                       (option_list[i][2] == ':' && option_list[i][j] == ',' && j != 4) ||
-                                       (option_list[i][2] != ':' && option_list[i][j] == ',' && j != 3 )){
-                                        yyerror("Invalid choice option");
-                                    } else if(( option_list[i][2] == ':' && j == 3) || (option_list[i][2] != ':' && j == 2)){
-                                        def = opt[option_list[i][j]];
-                                    } else if((option_list[i][2] == ':' && j > 4) || option_list[i][2] != ':' && j > 3) {
-                                        timeout = timeout + option_list[i][j];
-                                    }
-                               } 
-                               read = "read -t " + timeout +  " " + var + "; [ $? != 0 ] && " + var + "=" + toString(def) + "; exit $" + var;
-                               break;
-                            }
-                            case 'b' : break;
-                            case 'n' : break;
-                            case 's' : break;
-                            default: yyerror("Invalid choice option");
-                        }
-                     }
-                     choice = "bash -c ' " + echo + " ; " + read + " '"; 
+                     trans_choice(choice,echo);
                      command* choice_command = new command(choice, line);
                      $$ = long(choice_command);
                  }
                | CHOICE option_list string {
                      print_symbol("choce_command option_list");
                      std::string choice;
-                     std::string echo = "echo -ne \"" +  std::string(*(std::string *)$3) 
-                       + "\\n\"" ;
-                     std::string var = progrm.new_var();
-                     std::string read = "read " + var + " ; " + "exit $" + var;
-                     std::map<char,int> opt;
-                     std::string timeout;
-                     int k = 1; // numbering the options
-                     int def = 1; // default option for timeout 
-                     for(unsigned int i = 0; i < option_list.size(); i++){
-                        switch(option_list[i][1]){
-                            case 'c': {
-                                for(int j = 2; option_list[i][j] != '\0'; j++){
-                                    if(option_list[i][j] == ':' && j != 2) {
-                                        yyerror("Invalid choice option");
-                                    } else if (option_list[i][j] != ':'){
-                                        echo = echo + "\"Type " + toString(k)  +  " for " + option_list[i][j] + ".\\n\"";
-                                        opt[option_list[i][j]] = k;
-                                        k++;
-                                    }
-                                }
-                                break;
-                            }
-                            case 't': {
-                               for(int j = 2; option_list[i][j] != '\0'; j++){
-                                    if((option_list[i][j] == ':' && j != 2) || 
-                                       (option_list[i][2] == ':' && option_list[i][j] == ',' && j != 4) ||
-                                       (option_list[i][2] != ':' && option_list[i][j] == ',' && j != 3 )){
-                                        yyerror("Invalid choice option");
-                                    } else if(( option_list[i][2] == ':' && j == 3) || (option_list[i][2] != ':' && j == 2)){
-                                        def = opt[option_list[i][j]];
-                                    } else if((option_list[i][2] == ':' && j > 4) || option_list[i][2] != ':' && j > 3) {
-                                        timeout = timeout + option_list[i][j];
-                                    }
-                               } 
-                               read = "read -t " + timeout +  " " + var + "; [ $? != 0 ] && " + var + "=" + toString(def) + "; exit $" + var;
-                               break;
-                            }
-                            case 'b' : break;
-                            case 'n' : break;
-                            case 's' : break;
-                            default: yyerror("Invalid choice option");
-                        }
-                     }
-                     choice = "bash -c ' " + echo + " ; " + read + " '"; 
+                     std::string echo = "echo -ne \"" +  std::string(*(std::string *)$3) + "\\n\"" ;
+                     trans_choice(choice,echo);
                      command* choice_command = new command(choice, line);
                      $$ = long(choice_command);
                      delete (std::string *) ($3);
-               }
+                  }
                ;
                 
 for_command : FOR PERCENT variable IN LPAREN for_list RPAREN DO command {
@@ -1056,7 +974,51 @@ void trans_opts(char *name) {
         }
     }
 }
-
+void trans_choice(std::string& choice,std::string& echo){
+                     
+    std::string var = progrm.new_var();
+    std::string read = "read " + var + " ; " + "exit $" + var;
+    std::map<char,int> opt;
+    std::string timeout;
+    int k = 1; // numbering the options
+    int def = 1; // default option for timeout 
+    for(unsigned int i = 0; i < option_list.size(); i++){
+        switch(option_list[i][1]){
+            case 'c': {
+                for(int j = 2; option_list[i][j] != '\0'; j++){
+                    if(option_list[i][j] == ':' && j != 2) {
+                        yyerror("Invalid choice option");
+                    } else if (option_list[i][j] != ':'){
+                                echo = echo + "\"Type " + toString(k)  +  " for " + option_list[i][j] + ".\\n\"";
+                                opt[option_list[i][j]] = k;
+                                k++;
+                            }
+                     }
+                break;
+                }
+            case 't': {
+                for(int j = 2; option_list[i][j] != '\0'; j++){
+                    if((option_list[i][j] == ':' && j != 2) || 
+                       (option_list[i][2] == ':' && option_list[i][j] == ',' && j != 4) ||
+                       (option_list[i][2] != ':' && option_list[i][j] == ',' && j != 3 )){  
+                           yyerror("Invalid choice option");
+                        } else if(( option_list[i][2] == ':' && j == 3) || (option_list[i][2] != ':' && j == 2)){
+                                    def = opt[option_list[i][j]];
+                        } else if((option_list[i][2] == ':' && j > 4) || option_list[i][2] != ':' && j > 3) {
+                                    timeout = timeout + option_list[i][j];
+                        }
+                     } 
+                read = "read -t " + timeout +  " " + var + "; [ $? != 0 ] && " + var + "=" + toString(def) + "; exit $" + var;
+                break;
+                }
+            case 'b' : break;
+            case 'n' : break;
+            case 's' : break;
+            default: yyerror("Invalid choice option");
+        }
+    }
+    choice = "bash -c ' " + echo + " ; " + read + " '"; 
+}
 int yyerror(char *s) {
     fprintf(stderr, "\nerror: (%d): %s\n", line, s);
     error = 1;
