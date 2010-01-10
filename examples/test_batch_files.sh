@@ -22,7 +22,11 @@ do
         echo -n " "
         let j=$j+1
     done
-    ./../batch2bash -d -i $i -o $i.sh > $i.output 2> $i.error
+    if [[ $1 == "valgrind" ]]; then
+        valgrind ../batch2bash -i $i -o $i.sh > /dev/null 2> $i.valgrind
+    else
+        ../batch2bash -d -i $i -o $i.sh > $i.output 2> $i.error
+    fi
     if [ $? != 0 ]; then
         echo -en '\E[40;31m'"[ERROR]"
         tput sgr0
