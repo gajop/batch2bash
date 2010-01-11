@@ -14,6 +14,7 @@
 #include "utility.hpp"
 #include <stack>
 #include <string>
+#include <ctype.h>
 #include <vector>
 
 #define MAXBUFF 256 
@@ -938,6 +939,39 @@ path : PATH_LINE {
 
 string : STRING { 
              std::string* temp = new std::string(std::string((char *) $1));
+             unsigned state = 0, first;
+             if (0)
+             for (unsigned i = 0; i < temp->size(); ++i) {
+                switch (state) {
+                case 0: 
+                    if (temp->at(i) == '%') {
+                        state = 1;
+                        first = i;
+                    }
+                    break;
+                case 1:
+                    if (temp->at(i) == '%') {
+                        state = 0;
+                        temp->erase(temp->begin() + i);
+                    } else if (isdigit(temp->at(i))) {
+                        temp->at(first) = '$';
+                        std::string var = temp->substr(first, i);
+                        state = 0;
+                    } else {
+                        state = 2;
+                    }
+                    break;
+                case 2:
+                    if (temp->at(i) == '%') {
+                        state = 0;
+                        temp->at(first) = '$';
+                        temp->erase(temp->begin() + i);
+                        std::string var = temp->substr(first, i);
+                        progrm.var_add(var);
+                    }
+                    break;
+                }
+             }
              free((char *) $1);
              $$ = (long) temp;
          } 
