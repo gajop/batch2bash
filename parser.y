@@ -930,7 +930,7 @@ path : PATH_LINE {
            $$ = $1;
        }
      | variable {
-           std::string* temp = new std::string("$" + std::string((char *) $1));
+           std::string* temp = new std::string("$" + *(std::string *) $1);
            delete (std::string *) $1;
            $$ = (long) temp;
        }
