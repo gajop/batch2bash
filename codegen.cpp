@@ -136,6 +136,8 @@ std::string translate(command* comm, int round, std::vector<command*> prev, int&
         } else {
             return add_args("rmdir", comm);
         }
+    } else if (name == "drive") {
+        return "";
     }
     if (lookup.exists(name)) {
         return add_args(lookup.get_trans(name), comm);
@@ -224,6 +226,7 @@ options::options(){
     opts.clear();
     //date options
     opts["/d"] = " ";
+    opts["/t"] = " ";
     options_map["date"] = opts;
     opts.clear();
     //time options

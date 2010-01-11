@@ -795,7 +795,7 @@ time_command : TIME {
 drive_command : DRIVE_ROOT {
                     print_symbol("drive_command");
                     free((char *)$1); //this command is incomplete...
-                 //   $$ = long(new command("drive", line));
+                    $$ = long(new command("drive", line));
                 }
               ;
 
