@@ -940,7 +940,6 @@ path : PATH_LINE {
 string : STRING { 
              std::string* temp = new std::string(std::string((char *) $1));
              unsigned state = 0, first;
-             if (0)
              for (unsigned i = 0; i < temp->size(); ++i) {
                 switch (state) {
                 case 0: 

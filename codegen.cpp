@@ -47,7 +47,7 @@ std::string translate(command* comm, int round, std::vector<command*> prev, int&
                 if (comm->get_argument(i).value == "not") {
                     out += " ! ";
                 } else if (comm->get_argument(i).value == "errorlevel") {
-                    out += " $? ==";
+                    out += std::string(" $? ") + " -ge ";
                 } else if (comm->get_argument(i).value == "exists") {
                     out += " -a";
                 } else {
@@ -82,7 +82,7 @@ std::string translate(command* comm, int round, std::vector<command*> prev, int&
                 if (comm->get_argument(i).value == "not") {
                     out += " ! ";
                 } else if (comm->get_argument(i).value == "errorlevel") {
-                    out += " $? ==";
+                    out += std::string(" $? ") + " -ge ";
                 } else if (comm->get_argument(i).value == "exists") {
                     out += " -a";
                 } else {
@@ -121,8 +121,21 @@ std::string translate(command* comm, int round, std::vector<command*> prev, int&
             --indent;
             return "done";
         }
-    } else if(name == "call"){
+    } else if (name == "call"){
         return "./" + comm->get_argument(0).value;
+    } else if (name == "rd") {
+        int rm = 0;
+        for (unsigned i = 0; i < comm->get_num_args(); ++i) {
+            if (comm->get_argument(i).type == aOPT) {
+                rm = 1;
+                break;
+            }
+        }
+        if (rm) {
+            return add_args("rm", comm);
+        } else {
+            return add_args("rmdir", comm);
+        }
     }
     if (lookup.exists(name)) {
         return add_args(lookup.get_trans(name), comm);
@@ -146,11 +159,7 @@ std::string add_args(const std::string& translated_name, command* comm) {
 }
 
 std::string add_arg(const std::string& so_far, const argument& arg) {
-    if (arg.type == aOPT) {
-        return so_far + " -" + arg.value;
-    } else {
-        return so_far + " " +  arg.value;
-    }
+    return so_far + " " + arg.value;
 }
 
 
@@ -270,8 +279,8 @@ options::options(){
     options_map["color"] = opts;
     opts.clear();
     //rd options
-    opts["/s"] = "--ignore-fail-on-non-empty";
-    opts["/q"] = " ";
+    opts["/s"] = "-r";
+    opts["/q"] = "-f";
     options_map["rd"] = opts;
     opts.clear();
     //
