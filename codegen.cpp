@@ -172,6 +172,7 @@ options::options(){
     //del options
     opts["/p"] = "-i";
     opts["/v"] = " ";
+    opts["/s"] = " ";
     opts["/q"] = "-f";
     options_map["del"] = opts;
     opts.clear();

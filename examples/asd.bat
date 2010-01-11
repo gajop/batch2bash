@@ -5,7 +5,9 @@ rem
 
 
 @ECHO OFF
-
+set %asd%="asd"
+dir %asd%
+find %asd% asd
 rem testing redirection translating 
 dir /S /P temp      > contentOfTemp.txt
 dir  temp >> isAppendingWorking.txt
