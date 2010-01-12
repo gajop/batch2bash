@@ -2,3 +2,4 @@
 rm -f *.bat.output
 rm -f *.bat.error
 rm -f *.bat.sh
+rm -f *.bat.valgrind

@@ -43,7 +43,7 @@ void command::add_option(const std::string& value) {
 
 void command::add_options(const std::vector<std::string>& input_vector) {
     for (unsigned i = 0; i < input_vector.size(); ++i) {
-        args.push_back(argument(input_vector[i], aSTRING));
+        args.push_back(argument(input_vector[i], aOPT));
     }
 }
 

@@ -23,7 +23,7 @@ newline             \n|\n\r
 
 echo[[:blank:]"."][^\n><]*   { yylval = (long)strdup(yytext + 5);  print_token("ECHO"); return ECHO; }
 (rem[\t ]+.*)|rem       {  yylval = (long)strdup(yytext + 3);  print_token("REM"); return REM;      }
-("/"|"-")[a-zA-Z0-9|?|:|-|,]+  {  yylval = (long)strdup(yytext);  print_token("OPTION"); return OPTION; } 
+("/"|"-")[a-zA-Z0-9\?:\-,_]+  {  yylval = (long)strdup(yytext);  print_token("OPTION"); return OPTION; } 
 call                    {  print_token("CALL"); return CALL;                                        }  
 choice                  {  print_token("CHOICE"); return CHOICE;                                    }
 con                     {  print_token("CONSOLE"); return CONSOLE;                                  }
@@ -91,14 +91,14 @@ type                    {  print_token("TYPE"); return TYPE;                    
 xcopy                   {  print_token("XCOPY"); return XCOPY;                                      }
 
 [a-zA-Z]\:              {  print_token("DRIVE_ROOT"); yylval = (long)strdup(yytext); return DRIVE_ROOT;}
-[a-zA-Z0-9]+\\+[a-zA-Z0-9\\]*  {   print_token("PATH_LINE"); yylval = (long)strdup(yytext); return PATH_LINE;}
+[a-zA-Z0-9]+\\+[a-zA-Z0-9\\."*"]*  {   print_token("PATH_LINE"); yylval = (long)strdup(yytext); return PATH_LINE;}
 
 ":"                            {  print_token("COLON"); return COLON;                           }
 ";"                            {  print_token("SEMICOLON"); return SEMICOLON;                   }
 "/"                            {  print_token("SLASH"); return SLASH;                           }
 "\\"                           {  print_token("BACKSLASH"); return BACKSLASH;                   }
 [[:blank:]]+                   {                                                                }
-[_a-zA-Z0-9"*""?"~]+    {  yylval = (long)strdup(yytext);  print_token("ID\n"); return ID;   }
+[_a-zA-Z0-9"*""?"~][_a-zA-Z0-9"*""?"~\-]*  {  yylval = (long)strdup(yytext);  print_token("ID\n"); return ID;   }
 
 {newline}({newline}|[[:blank:]])*   { for (unsigned int i = 0; yytext[i] != '\0'; i++) { 
                                           if (yytext[i] == '\n') line++;
@@ -107,7 +107,7 @@ xcopy                   {  print_token("XCOPY"); return XCOPY;                  
                                     }
 
 \"\%?[a-z0-9[:blank:]]*\"        { print_token("STRING");yylval = (long)strdup(yytext); return STRING; }
-.                                { fprintf(stderr, "\nlexical error: (%d): %c, %d", line, yytext[0], yytext[0]); error = 1; }
+.                                { fprintf(stderr, "lexical error: (%d): %d\n", line, yytext[0]); error = 1; }
 
 %%
 
