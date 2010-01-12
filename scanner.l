@@ -91,7 +91,7 @@ type                    {  print_token("TYPE"); return TYPE;                    
 xcopy                   {  print_token("XCOPY"); return XCOPY;                                      }
 
 [a-zA-Z]\:              {  print_token("DRIVE_ROOT"); yylval = (long)strdup(yytext); return DRIVE_ROOT;}
-[a-zA-Z0-9]+\\+[a-zA-Z0-9\\]*  {   print_token("PATH_LINE"); yylval = (long)strdup(yytext); return PATH_LINE;}
+[a-zA-Z0-9]+\\+[a-zA-Z0-9\\."*"]*  {   print_token("PATH_LINE"); yylval = (long)strdup(yytext); return PATH_LINE;}
 
 ":"                            {  print_token("COLON"); return COLON;                           }
 ";"                            {  print_token("SEMICOLON"); return SEMICOLON;                   }

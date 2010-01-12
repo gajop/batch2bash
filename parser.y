@@ -930,6 +930,20 @@ path : PATH_LINE {
      | filename {
            $$ = $1;
        }
+     | variable BACKSLASH PATH_LINE {
+           convert_path((char *) $3);
+           std::string* temp = new std::string("$" + *(std::string *) $1 + "/" + (char *) $3 ); 
+           delete (std::string *) $1;
+           free((char *) $3);
+           $$ = (long) temp;
+      }
+     | variable BACKSLASH filename {
+           print_symbol("variable filename");
+           std::string* temp = new std::string("$" + *(std::string *) $1 + "/" + *(std::string *) $3 ); 
+           delete (std::string *) $1;
+           delete (std::string *) $3;    
+           $$ = (long ) temp;
+      }
      | variable {
            std::string* temp = new std::string("$" + *(std::string *) $1);
            delete (std::string *) $1;
