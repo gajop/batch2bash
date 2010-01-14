@@ -17,7 +17,7 @@ void print_token(const char *string);
 
 letter              [_a-zA-Z]
 digit               [0-9]
-newline             \n|\n\r 
+newline             (\n|\r\n)
 
 %%
 
