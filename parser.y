@@ -31,7 +31,7 @@ program progrm;
 
 int yyparse(void);
 int yylex(void);
-int yyerror(char *s);
+int yyerror(const char *s);
 void print_symbol(const char *str);
 void trans_opts(char *name);
 void trans_choice(std::string& choice,std::string& echo);
@@ -1066,7 +1066,7 @@ void trans_choice(std::string& choice,std::string& echo){
     }
     choice = "bash -c ' " + echo + " ; " + read + " '"; 
 }
-int yyerror(char *s) {
+int yyerror(const char *s) {
     fprintf(stderr, "\nerror: (%d): %s\n", line, s);
     error = 1;
     return 0;
